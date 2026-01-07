@@ -1,4 +1,3 @@
-import { revalidateTag } from 'next/cache';
 import { NextResponse } from 'next/server';
 import { config } from '@/lib/config';
 import { getStripe } from '@/lib/stripe';
@@ -62,7 +61,6 @@ export async function POST(request: Request) {
             monthly_request_limit: TIER_LIMITS[tier] || 1000,
           })
           .eq('developer_id', developerId);
-        revalidateTag(`subscription-${developerId}`, { expire: 0 });
         await invalidateGatewayCache(developerId);
       }
       break;
@@ -104,7 +102,6 @@ export async function POST(request: Request) {
         .select('developer_id')
         .single();
       if (updatedSub) {
-        revalidateTag(`subscription-${updatedSub.developer_id}`, { expire: 0 });
         await invalidateGatewayCache(updatedSub.developer_id);
       }
       break;
@@ -124,7 +121,6 @@ export async function POST(request: Request) {
         .select('developer_id')
         .single();
       if (deletedSub) {
-        revalidateTag(`subscription-${deletedSub.developer_id}`, { expire: 0 });
         await invalidateGatewayCache(deletedSub.developer_id);
       }
       break;
