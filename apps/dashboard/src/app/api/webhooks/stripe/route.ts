@@ -1,11 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { stripe } from '@/lib/stripe';
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!,
-);
+import { config } from '@/lib/config';
+import { getStripe } from '@/lib/stripe';
+import { createServiceClient } from '@/lib/supabase/service';
 
 const TIER_LIMITS: Record<string, number> = {
   developer: 50000,
@@ -16,12 +12,15 @@ export async function POST(request: Request) {
   const body = await request.text();
   const signature = request.headers.get('stripe-signature')!;
 
+  const stripe = getStripe();
+  const supabaseAdmin = createServiceClient();
+
   let event;
   try {
     event = stripe.webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET!,
+      config.stripe.webhookSecret,
     );
   } catch (err) {
     console.error('Webhook signature verification failed:', err);

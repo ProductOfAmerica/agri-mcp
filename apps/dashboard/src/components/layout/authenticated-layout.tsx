@@ -1,6 +1,6 @@
 import { SidebarInset, SidebarProvider } from '@agrimcp/ui/components/sidebar';
-import { connection } from 'next/server';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { Header } from '@/components/layout/header';
 import { SidebarWrapper } from '@/components/layout/sidebar-wrapper';
 import { createClient } from '@/lib/supabase/server';

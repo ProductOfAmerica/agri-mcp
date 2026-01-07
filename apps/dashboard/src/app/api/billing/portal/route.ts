@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { stripe } from '@/lib/stripe';
+import { config } from '@/lib/config';
+import { getStripe } from '@/lib/stripe';
 import { createClient } from '@/lib/supabase/server';
 
 export async function POST() {
@@ -22,9 +23,10 @@ export async function POST() {
     return NextResponse.json({ error: 'No subscription' }, { status: 400 });
   }
 
+  const stripe = getStripe();
   const session = await stripe.billingPortal.sessions.create({
     customer: subscription.stripe_customer_id,
-    return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/billing`,
+    return_url: `${config.appUrl}/dashboard/billing`,
   });
 
   return NextResponse.json({ url: session.url });

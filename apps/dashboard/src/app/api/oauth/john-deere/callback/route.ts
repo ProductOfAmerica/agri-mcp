@@ -1,9 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { config } from '@/lib/config';
 import { createClient } from '@/lib/supabase/server';
-
-const JOHN_DEERE_TOKEN_URL =
-  'https://signin.johndeere.com/oauth2/aus78tnlaysMraFhC1t7/v1/token';
 
 interface TokenResponse {
   access_token: string;
@@ -70,15 +68,11 @@ export async function GET(request: Request) {
     returnUrl: string;
   };
 
-  const clientId = process.env.JOHN_DEERE_CLIENT_ID ?? '';
-  const clientSecret = process.env.JOHN_DEERE_CLIENT_SECRET ?? '';
-  const redirectUri = process.env.JOHN_DEERE_REDIRECT_URI ?? '';
+  const basicAuth = Buffer.from(
+    `${config.johnDeere.clientId}:${config.johnDeere.clientSecret}`,
+  ).toString('base64');
 
-  const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString(
-    'base64',
-  );
-
-  const tokenResponse = await fetch(JOHN_DEERE_TOKEN_URL, {
+  const tokenResponse = await fetch(config.johnDeere.tokenUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -87,7 +81,7 @@ export async function GET(request: Request) {
     body: new URLSearchParams({
       grant_type: 'authorization_code',
       code,
-      redirect_uri: redirectUri,
+      redirect_uri: config.johnDeere.redirectUri,
     }),
   });
 

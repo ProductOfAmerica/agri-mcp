@@ -29,14 +29,22 @@ function checkDependencies() {
   try {
     execSync('supabase --version', { stdio: 'pipe' });
   } catch {
-    log('ERROR', colors.red, 'Supabase CLI not installed. Run: npm install -g supabase');
+    log(
+      'ERROR',
+      colors.red,
+      'Supabase CLI not installed. Run: npm install -g supabase',
+    );
     process.exit(1);
   }
 
   try {
     execSync('stripe --version', { stdio: 'pipe' });
   } catch {
-    log('WARN', colors.yellow, 'Stripe CLI not installed. Stripe webhooks will be skipped.');
+    log(
+      'WARN',
+      colors.yellow,
+      'Stripe CLI not installed. Stripe webhooks will be skipped.',
+    );
     return { hasStripe: false };
   }
 
@@ -48,7 +56,11 @@ function checkDockerRunning() {
     execSync('docker info', { stdio: 'pipe' });
     return true;
   } catch {
-    log('ERROR', colors.red, 'Docker is not running. Please start Docker Desktop.');
+    log(
+      'ERROR',
+      colors.red,
+      'Docker is not running. Please start Docker Desktop.',
+    );
     process.exit(1);
   }
 }
@@ -126,16 +138,22 @@ async function startStripeWebhook() {
   log('STRIPE', colors.magenta, 'Starting Stripe webhook listener...');
 
   return new Promise((resolve) => {
-    const proc = spawn('stripe', ['listen', '--forward-to', 'localhost:3000/api/webhooks/stripe'], {
-      shell: true,
-      stdio: 'pipe',
-    });
+    const proc = spawn(
+      'stripe',
+      ['listen', '--forward-to', 'localhost:3000/api/webhooks/stripe'],
+      {
+        shell: true,
+        stdio: 'pipe',
+      },
+    );
 
     let webhookSecret = null;
 
     const handleOutput = (data) => {
       const output = data.toString();
-      process.stdout.write(`${colors.magenta}[STRIPE]${colors.reset} ${output}`);
+      process.stdout.write(
+        `${colors.magenta}[STRIPE]${colors.reset} ${output}`,
+      );
 
       const match = output.match(/whsec_[a-zA-Z0-9]+/);
       if (match && !webhookSecret) {
@@ -278,7 +296,11 @@ async function main() {
   console.log(`\n${'─'.repeat(50)}`);
   log('INFO', colors.cyan, 'All services started in PRODUCTION mode!');
   log('INFO', colors.cyan, 'Dashboard: http://localhost:3000');
-  log('INFO', colors.cyan, `Supabase Studio: ${supabaseCreds.studioUrl || 'http://127.0.0.1:54323'}`);
+  log(
+    'INFO',
+    colors.cyan,
+    `Supabase Studio: ${supabaseCreds.studioUrl || 'http://127.0.0.1:54323'}`,
+  );
   console.log(`${'─'.repeat(50)}\n`);
 
   const cleanup = () => {

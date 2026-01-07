@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { stripe, TIER_TO_PRICE } from '@/lib/stripe';
+import { config, TIER_TO_PRICE } from '@/lib/config';
+import { getStripe } from '@/lib/stripe';
 import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: Request) {
@@ -27,6 +28,7 @@ export async function POST(request: Request) {
       .eq('developer_id', user.id)
       .single();
 
+    const stripe = getStripe();
     let customerId = subscription?.stripe_customer_id;
 
     if (!customerId) {
@@ -53,8 +55,8 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/billing?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/billing?canceled=true`,
+      success_url: `${config.appUrl}/dashboard/billing?success=true`,
+      cancel_url: `${config.appUrl}/dashboard/billing?canceled=true`,
       metadata: {
         developer_id: user.id,
         tier,

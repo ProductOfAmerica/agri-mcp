@@ -1,9 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { config } from '@/lib/config';
 import { createClient } from '@/lib/supabase/server';
-
-const JOHN_DEERE_AUTH_URL =
-  'https://signin.johndeere.com/oauth2/aus78tnlaysMraFhC1t7/v1/authorize';
 
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -40,26 +38,23 @@ export async function GET(request: Request) {
   const cookieStore = await cookies();
   cookieStore.set('oauth_state', state, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: config.isProduction,
     sameSite: 'lax',
     maxAge: 60 * 10,
     path: '/',
   });
   cookieStore.set('oauth_state_data', JSON.stringify(stateData), {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: config.isProduction,
     sameSite: 'lax',
     maxAge: 60 * 10,
     path: '/',
   });
 
-  const authUrl = new URL(JOHN_DEERE_AUTH_URL);
-  authUrl.searchParams.set('client_id', process.env.JOHN_DEERE_CLIENT_ID ?? '');
+  const authUrl = new URL(config.johnDeere.authUrl);
+  authUrl.searchParams.set('client_id', config.johnDeere.clientId);
   authUrl.searchParams.set('response_type', 'code');
-  authUrl.searchParams.set(
-    'redirect_uri',
-    process.env.JOHN_DEERE_REDIRECT_URI ?? '',
-  );
+  authUrl.searchParams.set('redirect_uri', config.johnDeere.redirectUri);
   authUrl.searchParams.set('scope', 'ag1 ag2 ag3 offline_access');
   authUrl.searchParams.set('state', state);
 

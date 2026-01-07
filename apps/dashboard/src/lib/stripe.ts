@@ -1,15 +1,15 @@
 import Stripe from 'stripe';
+import { config } from './config';
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-12-15.clover',
-});
+let stripeInstance: Stripe | null = null;
 
-export const PRICE_IDS = {
-  developer: process.env.STRIPE_DEVELOPER_PRICE_ID!,
-  startup: process.env.STRIPE_STARTUP_PRICE_ID!,
-} as const;
+export function getStripe(): Stripe {
+  if (!stripeInstance) {
+    stripeInstance = new Stripe(config.stripe.secretKey, {
+      apiVersion: '2025-12-15.clover',
+    });
+  }
+  return stripeInstance;
+}
 
-export const TIER_TO_PRICE: Record<string, string> = {
-  developer: PRICE_IDS.developer,
-  startup: PRICE_IDS.startup,
-};
+export { TIER_TO_PRICE } from './config';
