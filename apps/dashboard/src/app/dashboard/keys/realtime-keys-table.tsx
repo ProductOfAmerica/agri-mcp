@@ -44,7 +44,6 @@ export function RealtimeKeysTable({
   const [keys, setKeys] = useState(serverKeys);
   const supabase = useMemo(() => createClient(), []);
 
-
   useEffect(() => {
     setKeys(serverKeys);
   }, [serverKeys]);
@@ -55,7 +54,7 @@ export function RealtimeKeysTable({
 
     async function setupRealtime(accessToken: string) {
       if (!isMounted) return;
-      
+
       if (channel) {
         supabase.removeChannel(channel);
       }
@@ -98,13 +97,13 @@ export function RealtimeKeysTable({
         .subscribe();
     }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (session?.access_token) {
-          setupRealtime(session.access_token);
-        }
-      },
-    );
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.access_token) {
+        setupRealtime(session.access_token);
+      }
+    });
 
     return () => {
       isMounted = false;

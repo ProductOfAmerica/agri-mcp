@@ -27,7 +27,7 @@ async function KeysTableWrapper({ userId }: { userId: string }) {
 
 export default async function KeysPage() {
   await connection();
-  
+
   const supabase = await createClient();
   const {
     data: { user },
