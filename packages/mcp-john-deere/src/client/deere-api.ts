@@ -1,9 +1,15 @@
 import type {
   JDApiResponse,
+  JDAsset,
+  JDClient,
+  JDCropType,
+  JDFarm,
   JDField,
   JDFieldOperation,
   JDMachine,
+  JDMapLayer,
   JDOrganization,
+  JDUser,
 } from '@agrimcp/types';
 
 interface DeereClientOptions {
@@ -73,5 +79,32 @@ export class DeereApiClient {
 
   async getMachines(orgId: string): Promise<JDApiResponse<JDMachine>> {
     return this.request(`/organizations/${orgId}/machines`);
+  }
+
+  async getFarms(orgId: string): Promise<JDApiResponse<JDFarm>> {
+    return this.request(`/organizations/${orgId}/farms`);
+  }
+
+  async getClients(orgId: string): Promise<JDApiResponse<JDClient>> {
+    return this.request(`/organizations/${orgId}/clients`);
+  }
+
+  async getMapLayers(
+    orgId: string,
+    fieldId: string,
+  ): Promise<JDApiResponse<JDMapLayer>> {
+    return this.request(`/organizations/${orgId}/fields/${fieldId}/mapLayers`);
+  }
+
+  async getCropTypes(): Promise<JDApiResponse<JDCropType>> {
+    return this.request('/cropTypes');
+  }
+
+  async getUsers(orgId: string): Promise<JDApiResponse<JDUser>> {
+    return this.request(`/organizations/${orgId}/users`);
+  }
+
+  async getAssets(orgId: string): Promise<JDApiResponse<JDAsset>> {
+    return this.request(`/organizations/${orgId}/assets`);
   }
 }

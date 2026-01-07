@@ -11,14 +11,42 @@ interface Env {
   API_KEY_CACHE: KVNamespace;
   JOHN_DEERE_MCP: Fetcher;
   ENVIRONMENT: string;
+  GATEWAY_SECRET: string;
 }
+
+const MAX_BODY_SIZE = 100 * 1024;
+const MAX_JSON_DEPTH = 10;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Farmer-ID',
   'Access-Control-Max-Age': '86400',
 };
+
+function checkJsonDepth(obj: unknown, depth = 0): boolean {
+  if (depth > MAX_JSON_DEPTH) return false;
+  if (obj && typeof obj === 'object') {
+    for (const value of Object.values(obj)) {
+      if (!checkJsonDepth(value, depth + 1)) return false;
+    }
+  }
+  return true;
+}
+
+function sanitizeObject<T>(obj: T): T {
+  if (!obj || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(sanitizeObject) as T;
+
+  const sanitized: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      continue;
+    }
+    sanitized[key] = sanitizeObject(value);
+  }
+  return sanitized as T;
+}
 
 function addCorsHeaders(response: Response): Response {
   const newResponse = new Response(response.body, response);
@@ -48,6 +76,30 @@ export default {
       return new Response(JSON.stringify({ status: 'ok' }), {
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
+    }
+
+    if (request.method !== 'POST') {
+      return addCorsHeaders(
+        new ApiError(
+          405,
+          'Method not allowed',
+          'METHOD_NOT_ALLOWED',
+        ).toResponse(),
+      );
+    }
+
+    const contentType = request.headers.get('Content-Type');
+    if (!contentType || !contentType.includes('application/json')) {
+      return addCorsHeaders(
+        Errors.badRequest('Content-Type must be application/json').toResponse(),
+      );
+    }
+
+    const contentLength = request.headers.get('Content-Length');
+    if (contentLength && Number.parseInt(contentLength, 10) > MAX_BODY_SIZE) {
+      return addCorsHeaders(
+        Errors.badRequest('Request body too large').toResponse(),
+      );
     }
 
     try {
@@ -85,8 +137,35 @@ export default {
         throw Errors.badRequest('Missing X-Farmer-ID header');
       }
 
-      const modifiedRequest = new Request(request, {
+      const hasControlChars = farmerId
+        .split('')
+        .some((c) => c.charCodeAt(0) < 0x20);
+      if (farmerId.length > 128 || hasControlChars) {
+        throw Errors.badRequest('Invalid X-Farmer-ID header');
+      }
+
+      let body: unknown;
+      try {
+        const text = await request.text();
+        if (text.length > MAX_BODY_SIZE) {
+          throw Errors.badRequest('Request body too large');
+        }
+        body = JSON.parse(text);
+      } catch (e) {
+        if (e instanceof ApiError) throw e;
+        throw Errors.badRequest('Invalid JSON body');
+      }
+
+      if (!checkJsonDepth(body)) {
+        throw Errors.badRequest('Request body too deeply nested');
+      }
+
+      const sanitizedBody = sanitizeObject(body);
+
+      const modifiedRequest = new Request(request.url, {
+        method: 'POST',
         headers: new Headers(request.headers),
+        body: JSON.stringify(sanitizedBody),
       });
       modifiedRequest.headers.set('X-Developer-ID', developer.id);
       modifiedRequest.headers.set('X-API-Key-ID', keyId);
@@ -99,14 +178,14 @@ export default {
         (async () => {
           let toolName = 'unknown';
           try {
-            const body = (await request.clone().json()) as {
+            const parsedBody = sanitizedBody as {
               method?: string;
               params?: { name?: string };
             };
-            if (body.method === 'tools/call' && body.params?.name) {
-              toolName = body.params.name;
-            } else if (body.method) {
-              toolName = body.method;
+            if (parsedBody.method === 'tools/call' && parsedBody.params?.name) {
+              toolName = parsedBody.params.name;
+            } else if (parsedBody.method) {
+              toolName = parsedBody.method;
             }
           } catch {}
 

@@ -1,15 +1,27 @@
 import type {
+  Asset,
+  Client,
+  CropType,
   Equipment,
+  Farm,
   Field,
   GeoJsonPolygon,
   HarvestRecord,
+  JDAsset,
   JDBoundary,
+  JDClient,
+  JDCropType,
+  JDFarm,
   JDField,
   JDFieldOperation,
   JDMachine,
+  JDMapLayer,
   JDOrganization,
+  JDUser,
+  MapLayer,
   Organization,
   PlantingRecord,
+  User,
 } from '@agrimcp/types';
 
 export function normalizeOrganization(jd: JDOrganization): Organization {
@@ -101,5 +113,76 @@ export function normalizeEquipment(
     make: jd.make,
     model: jd.model,
     year: jd.modelYear,
+  };
+}
+
+export function normalizeFarm(jd: JDFarm, organizationId: string): Farm {
+  return {
+    id: crypto.randomUUID(),
+    externalId: jd.id,
+    provider: 'john_deere',
+    organizationId,
+    name: jd.name,
+  };
+}
+
+export function normalizeClient(jd: JDClient, organizationId: string): Client {
+  return {
+    id: crypto.randomUUID(),
+    externalId: jd.id,
+    provider: 'john_deere',
+    organizationId,
+    name: jd.name,
+  };
+}
+
+export function normalizeMapLayer(jd: JDMapLayer, fieldId: string): MapLayer {
+  const typeMap: Record<string, MapLayer['type']> = {
+    yield: 'yield',
+    elevation: 'elevation',
+    soil: 'soil',
+    prescription: 'prescription',
+  };
+  return {
+    id: crypto.randomUUID(),
+    fieldId,
+    type: typeMap[jd.type] || 'other',
+    name: jd.name,
+    date: jd.dateCreated,
+  };
+}
+
+export function normalizeCropType(jd: JDCropType): CropType {
+  return {
+    id: crypto.randomUUID(),
+    externalId: jd.id,
+    name: jd.name,
+  };
+}
+
+export function normalizeUser(jd: JDUser, organizationId: string): User {
+  return {
+    id: crypto.randomUUID(),
+    externalId: jd.id,
+    provider: 'john_deere',
+    organizationId,
+    accountName: jd.accountName,
+    givenName: jd.givenName,
+    familyName: jd.familyName,
+    userType: jd.userType,
+  };
+}
+
+export function normalizeAsset(jd: JDAsset, organizationId: string): Asset {
+  return {
+    id: crypto.randomUUID(),
+    externalId: jd.id,
+    provider: 'john_deere',
+    organizationId,
+    title: jd.title,
+    assetType: jd.assetType,
+    assetCategory: jd.assetCategory,
+    assetSubType: jd.assetSubType,
+    serialNumber: jd.serialNumber,
   };
 }

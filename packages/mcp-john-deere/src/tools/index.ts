@@ -3,23 +3,53 @@ import { z } from 'zod';
 import type { DeereApiClient } from '../client/deere-api.js';
 import * as normalize from '../normalize/responses.js';
 
+function stripControlChars(s: string): string {
+  return s
+    .split('')
+    .filter((c) => c.charCodeAt(0) >= 0x20)
+    .join('');
+}
+
+const safeId = z
+  .string()
+  .min(1)
+  .max(128)
+  .regex(/^[\w\-:.]+$/, 'Invalid ID format')
+  .transform(stripControlChars);
+
+const safeIdOptional = z
+  .string()
+  .max(128)
+  .regex(/^[\w\-:.]*$/, 'Invalid ID format')
+  .transform(stripControlChars)
+  .optional();
+
 export const listOrganizationsSchema = z.object({});
-export const listFieldsSchema = z.object({ organizationId: z.string() });
+export const listFieldsSchema = z.object({ organizationId: safeId });
 export const getFieldBoundarySchema = z.object({
-  organizationId: z.string(),
-  fieldId: z.string(),
+  organizationId: safeId,
+  fieldId: safeId,
 });
 export const getHarvestDataSchema = z.object({
-  organizationId: z.string(),
-  fieldId: z.string().optional(),
-  year: z.number().optional(),
+  organizationId: safeId,
+  fieldId: safeIdOptional,
+  year: z.number().int().min(1900).max(2100).optional(),
 });
 export const getPlantingDataSchema = z.object({
-  organizationId: z.string(),
-  fieldId: z.string().optional(),
-  year: z.number().optional(),
+  organizationId: safeId,
+  fieldId: safeIdOptional,
+  year: z.number().int().min(1900).max(2100).optional(),
 });
-export const listEquipmentSchema = z.object({ organizationId: z.string() });
+export const listEquipmentSchema = z.object({ organizationId: safeId });
+export const listFarmsSchema = z.object({ organizationId: safeId });
+export const listClientsSchema = z.object({ organizationId: safeId });
+export const listMapLayersSchema = z.object({
+  organizationId: safeId,
+  fieldId: safeId,
+});
+export const listCropTypesSchema = z.object({});
+export const listUsersSchema = z.object({ organizationId: safeId });
+export const listAssetsSchema = z.object({ organizationId: safeId });
 
 export async function listOrganizations(
   _: unknown,
@@ -122,6 +152,85 @@ export async function listEquipment(
   };
 }
 
+export async function listFarms(
+  input: z.infer<typeof listFarmsSchema>,
+  client: DeereApiClient,
+): Promise<CallToolResult> {
+  const response = await client.getFarms(input.organizationId);
+  const farms = response.values.map((f) =>
+    normalize.normalizeFarm(f, input.organizationId),
+  );
+  return {
+    content: [{ type: 'text', text: JSON.stringify(farms, null, 2) }],
+  };
+}
+
+export async function listClients(
+  input: z.infer<typeof listClientsSchema>,
+  client: DeereApiClient,
+): Promise<CallToolResult> {
+  const response = await client.getClients(input.organizationId);
+  const clients = response.values.map((c) =>
+    normalize.normalizeClient(c, input.organizationId),
+  );
+  return {
+    content: [{ type: 'text', text: JSON.stringify(clients, null, 2) }],
+  };
+}
+
+export async function listMapLayers(
+  input: z.infer<typeof listMapLayersSchema>,
+  client: DeereApiClient,
+): Promise<CallToolResult> {
+  const response = await client.getMapLayers(
+    input.organizationId,
+    input.fieldId,
+  );
+  const layers = response.values.map((l) =>
+    normalize.normalizeMapLayer(l, input.fieldId),
+  );
+  return {
+    content: [{ type: 'text', text: JSON.stringify(layers, null, 2) }],
+  };
+}
+
+export async function listCropTypes(
+  _: unknown,
+  client: DeereApiClient,
+): Promise<CallToolResult> {
+  const response = await client.getCropTypes();
+  const cropTypes = response.values.map(normalize.normalizeCropType);
+  return {
+    content: [{ type: 'text', text: JSON.stringify(cropTypes, null, 2) }],
+  };
+}
+
+export async function listUsers(
+  input: z.infer<typeof listUsersSchema>,
+  client: DeereApiClient,
+): Promise<CallToolResult> {
+  const response = await client.getUsers(input.organizationId);
+  const users = response.values.map((u) =>
+    normalize.normalizeUser(u, input.organizationId),
+  );
+  return {
+    content: [{ type: 'text', text: JSON.stringify(users, null, 2) }],
+  };
+}
+
+export async function listAssets(
+  input: z.infer<typeof listAssetsSchema>,
+  client: DeereApiClient,
+): Promise<CallToolResult> {
+  const response = await client.getAssets(input.organizationId);
+  const assets = response.values.map((a) =>
+    normalize.normalizeAsset(a, input.organizationId),
+  );
+  return {
+    content: [{ type: 'text', text: JSON.stringify(assets, null, 2) }],
+  };
+}
+
 export const toolDefinitions = [
   {
     name: 'list_organizations',
@@ -179,6 +288,60 @@ export const toolDefinitions = [
   {
     name: 'list_equipment',
     description: 'List equipment/machines for an organization.',
+    inputSchema: {
+      type: 'object',
+      properties: { organizationId: { type: 'string' } },
+      required: ['organizationId'],
+    },
+  },
+  {
+    name: 'list_farms',
+    description: 'List all farms for an organization.',
+    inputSchema: {
+      type: 'object',
+      properties: { organizationId: { type: 'string' } },
+      required: ['organizationId'],
+    },
+  },
+  {
+    name: 'list_clients',
+    description: 'List all clients for an organization.',
+    inputSchema: {
+      type: 'object',
+      properties: { organizationId: { type: 'string' } },
+      required: ['organizationId'],
+    },
+  },
+  {
+    name: 'list_map_layers',
+    description:
+      'List map layers for a field (yield maps, prescriptions, etc.).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        organizationId: { type: 'string' },
+        fieldId: { type: 'string' },
+      },
+      required: ['organizationId', 'fieldId'],
+    },
+  },
+  {
+    name: 'list_crop_types',
+    description: 'List all available crop types.',
+    inputSchema: { type: 'object', properties: {}, required: [] },
+  },
+  {
+    name: 'list_users',
+    description: 'List all users in an organization.',
+    inputSchema: {
+      type: 'object',
+      properties: { organizationId: { type: 'string' } },
+      required: ['organizationId'],
+    },
+  },
+  {
+    name: 'list_assets',
+    description: 'List all assets for an organization.',
     inputSchema: {
       type: 'object',
       properties: { organizationId: { type: 'string' } },

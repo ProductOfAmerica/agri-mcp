@@ -32,7 +32,9 @@ export async function getToken(
 
   const { data: connection, error } = await supabase
     .from('farmer_connections')
-    .select('id, access_token_encrypted, refresh_token_encrypted, token_expires_at')
+    .select(
+      'id, access_token_encrypted, refresh_token_encrypted, token_expires_at',
+    )
     .eq('developer_id', developerId)
     .eq('farmer_identifier', farmerId)
     .eq('provider', 'john_deere')
@@ -40,7 +42,7 @@ export async function getToken(
     .single();
 
   if (error || !connection) {
-    throw new Error(`No active John Deere connection for farmer: ${farmerId}`);
+    throw new Error('No active John Deere connection found');
   }
 
   const accessToken = atob(connection.access_token_encrypted);

@@ -15,11 +15,17 @@ async function sha256(str: string): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+async function addTimingNoise(): Promise<void> {
+  const delay = Math.random() * 50;
+  await new Promise((resolve) => setTimeout(resolve, delay));
+}
+
 export async function validateApiKey(
   apiKey: string | null,
   env: Env,
 ): Promise<ApiKeyValidation> {
-  if (!apiKey || !apiKey.startsWith('agri_live_')) {
+  if (!apiKey || !apiKey.startsWith('agri_live_') || apiKey.length < 20) {
+    await addTimingNoise();
     return { valid: false };
   }
 
@@ -60,6 +66,7 @@ export async function validateApiKey(
     .single();
 
   if (keyError || !keyData) {
+    await addTimingNoise();
     return { valid: false };
   }
 
@@ -94,8 +101,16 @@ export async function validateApiKey(
           developer_id: developer.id,
           stripe_subscription_id: null,
           stripe_customer_id: null,
-          tier: subscription.tier as 'free' | 'developer' | 'startup' | 'enterprise',
-          status: subscription.status as 'active' | 'canceled' | 'past_due' | 'trialing',
+          tier: subscription.tier as
+            | 'free'
+            | 'developer'
+            | 'startup'
+            | 'enterprise',
+          status: subscription.status as
+            | 'active'
+            | 'canceled'
+            | 'past_due'
+            | 'trialing',
           monthly_request_limit: subscription.monthly_request_limit,
           current_period_start: subscription.current_period_start,
           current_period_end: subscription.current_period_end,

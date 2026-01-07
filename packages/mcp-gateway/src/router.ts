@@ -1,5 +1,6 @@
 interface Env {
   JOHN_DEERE_MCP: Fetcher;
+  GATEWAY_SECRET: string;
 }
 
 export async function routeToProvider(
@@ -8,8 +9,12 @@ export async function routeToProvider(
   env: Env,
 ): Promise<Response> {
   switch (provider) {
-    case 'john-deere':
-      return env.JOHN_DEERE_MCP.fetch(request);
+    case 'john-deere': {
+      const headers = new Headers(request.headers);
+      headers.set('X-Gateway-Secret', env.GATEWAY_SECRET);
+      const modifiedRequest = new Request(request, { headers });
+      return env.JOHN_DEERE_MCP.fetch(modifiedRequest);
+    }
     default:
       return new Response(
         JSON.stringify({

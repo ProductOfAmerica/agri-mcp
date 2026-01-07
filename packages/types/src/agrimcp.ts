@@ -82,3 +82,48 @@ export interface GeoJsonPolygon {
 }
 
 export type Provider = 'john_deere' | 'climate_fieldview' | 'cnhi';
+
+export interface Farm {
+  id: string;
+  externalId: string;
+  provider: Provider;
+  organizationId: string;
+  name: string;
+}
+
+export interface Client {
+  id: string;
+  externalId: string;
+  provider: Provider;
+  organizationId: string;
+  name: string;
+}
+
+export interface CropType {
+  id: string;
+  externalId: string;
+  name: string;
+}
+
+export interface User {
+  id: string;
+  externalId: string;
+  provider: Provider;
+  organizationId: string;
+  accountName: string;
+  givenName?: string;
+  familyName?: string;
+  userType?: string;
+}
+
+export interface Asset {
+  id: string;
+  externalId: string;
+  provider: Provider;
+  organizationId: string;
+  title: string;
+  assetType: string;
+  assetCategory?: string;
+  assetSubType?: string;
+  serialNumber?: string;
+}

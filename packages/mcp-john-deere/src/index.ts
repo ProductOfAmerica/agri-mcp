@@ -10,10 +10,21 @@ interface Env {
   JOHN_DEERE_CLIENT_ID: string;
   JOHN_DEERE_CLIENT_SECRET: string;
   JOHN_DEERE_API_BASE: string;
+  GATEWAY_SECRET: string;
 }
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const providedSecret = request.headers.get('X-Gateway-Secret');
+    if (providedSecret !== env.GATEWAY_SECRET) {
+      return new Response(
+        JSON.stringify({
+          error: { message: 'Forbidden', code: 'FORBIDDEN' },
+        }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } },
+      );
+    }
+
     const developerId = request.headers.get('X-Developer-ID');
     const farmerId = request.headers.get('X-Farmer-ID');
 
@@ -21,6 +32,15 @@ export default {
       return new Response(
         JSON.stringify({
           error: { message: 'Missing context headers', code: 'BAD_REQUEST' },
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } },
+      );
+    }
+
+    if (developerId.length > 128 || farmerId.length > 128) {
+      return new Response(
+        JSON.stringify({
+          error: { message: 'Invalid header value', code: 'BAD_REQUEST' },
         }),
         { status: 400, headers: { 'Content-Type': 'application/json' } },
       );
@@ -78,6 +98,39 @@ export default {
           case 'list_equipment':
             result = await tools.listEquipment(
               tools.listEquipmentSchema.parse(args),
+              client,
+            );
+            break;
+          case 'list_farms':
+            result = await tools.listFarms(
+              tools.listFarmsSchema.parse(args),
+              client,
+            );
+            break;
+          case 'list_clients':
+            result = await tools.listClients(
+              tools.listClientsSchema.parse(args),
+              client,
+            );
+            break;
+          case 'list_map_layers':
+            result = await tools.listMapLayers(
+              tools.listMapLayersSchema.parse(args),
+              client,
+            );
+            break;
+          case 'list_crop_types':
+            result = await tools.listCropTypes(args, client);
+            break;
+          case 'list_users':
+            result = await tools.listUsers(
+              tools.listUsersSchema.parse(args),
+              client,
+            );
+            break;
+          case 'list_assets':
+            result = await tools.listAssets(
+              tools.listAssetsSchema.parse(args),
               client,
             );
             break;
