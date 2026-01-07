@@ -1,53 +1,44 @@
 import { SidebarInset, SidebarProvider } from '@agrimcp/ui/components/sidebar';
-import { redirect } from 'next/navigation';
-import { AppSidebar } from '@/components/layout/app-sidebar';
-import { Header } from '@/components/layout/header';
-import { createClient } from '@/lib/supabase/server';
+import { Skeleton } from '@agrimcp/ui/components/skeleton';
+import { Suspense } from 'react';
+import { AuthenticatedLayout } from '@/components/layout/authenticated-layout';
 
-export default async function DashboardLayout({
+function LayoutSkeleton() {
+  return (
+    <SidebarProvider>
+      <div className="flex h-full w-64 flex-col border-r bg-background p-4">
+        <div className="flex items-center gap-2 pb-4">
+          <Skeleton className="size-8 rounded-lg" />
+          <div className="space-y-1">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        </div>
+        <div className="space-y-2 pt-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-8 w-full rounded" />
+          ))}
+        </div>
+      </div>
+      <SidebarInset>
+        <div className="h-14 border-b" />
+        <main className="mx-auto size-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
+          <Skeleton className="h-8 w-48 mb-4" />
+          <Skeleton className="h-4 w-64" />
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}
+
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
-
-  const { data: developer } = await supabase
-    .from('developers')
-    .select('*, subscriptions(*)')
-    .eq('id', user.id)
-    .single();
-
-  const { data: usageStats } = await supabase
-    .from('usage_logs')
-    .select('id')
-    .eq('developer_id', user.id)
-    .gte(
-      'request_timestamp',
-      new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-    );
-
-  const subscription = developer?.subscriptions?.[0];
-  const usage = {
-    used: usageStats?.length ?? 0,
-    limit: subscription?.monthly_request_limit ?? 1000,
-  };
-
   return (
-    <SidebarProvider>
-      <AppSidebar usage={usage} plan={subscription?.tier ?? 'Free'} />
-      <SidebarInset>
-        <Header user={{ email: user.email }} />
-        <main className="mx-auto size-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
-          {children}
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+    <Suspense fallback={<LayoutSkeleton />}>
+      <AuthenticatedLayout>{children}</AuthenticatedLayout>
+    </Suspense>
   );
 }

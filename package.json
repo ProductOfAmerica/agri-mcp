@@ -7,7 +7,7 @@
   "scripts": {
     "build": "turbo build",
     "dev": "node scripts/dev.js",
-    "dev:dashboard": "turbo dev --filter=@agrimcp/dashboard",
+    "start:local": "node scripts/start-local.js",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "check": "turbo check",
