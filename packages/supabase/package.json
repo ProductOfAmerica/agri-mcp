@@ -3,9 +3,12 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
+    "start": "supabase start",
+    "stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:migrate": "supabase migration up",
     "db:new": "supabase migration new",
+    "db:seed": "supabase db reset --seed-only",
     "functions:serve": "supabase functions serve",
     "lint": "biome check supabase/functions/"
   }

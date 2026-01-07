@@ -129,6 +129,11 @@ export async function toolHandler(input, client) {
 - Scopes: `ag1 ag2 ag3 offline_access`
 - Header: `Accept: application/vnd.deere.axiom.v3+json`
 
+## Next.js 16 Notes
+
+- **Auth uses `proxy.ts`, NOT `middleware.ts`** - Next.js 16 uses proxy for auth
+- Webhook routes must be excluded from auth checks in `src/proxy.ts`
+
 ## Troubleshooting
 
 ### "Module not found" errors

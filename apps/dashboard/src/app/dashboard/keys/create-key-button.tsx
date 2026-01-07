@@ -32,7 +32,6 @@ export function CreateKeyButton() {
     if (createdKey) {
       navigator.clipboard.writeText(createdKey);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     }
   }
 
@@ -67,25 +66,33 @@ export function CreateKeyButton() {
                     Copy this key now. You won&apos;t be able to see it again!
                   </p>
                 </div>
-                <div className="bg-gray-100 p-3 rounded-lg font-mono text-sm break-all mb-4">
-                  {createdKey}
-                </div>
-                <div className="flex gap-3">
+                <div className="bg-gray-100 p-3 rounded-lg font-mono text-sm break-all mb-4 flex items-center gap-2">
+                  <span className="flex-1">{createdKey}</span>
                   <button
                     type="button"
                     onClick={handleCopy}
-                    className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-200"
+                    className="shrink-0 text-gray-500 hover:text-gray-700"
+                    title="Copy to clipboard"
                   >
-                    {copied ? 'Copied!' : 'Copy'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleClose}
-                    className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700"
-                  >
-                    Done
+                    {copied ? (
+                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    )}
                   </button>
                 </div>
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  disabled={!copied}
+                  className="w-full bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Done
+                </button>
               </>
             ) : (
               <>

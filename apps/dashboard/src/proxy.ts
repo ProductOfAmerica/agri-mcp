@@ -2,6 +2,10 @@ import { type CookieOptions, createServerClient } from '@supabase/ssr';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function updateSession(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith('/api/webhooks/')) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });

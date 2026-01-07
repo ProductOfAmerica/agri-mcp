@@ -4,7 +4,9 @@
       "Bash(pnpm lint:fix:*)",
       "Bash(pnpm check:*)",
       "Bash(pnpm lint:*)",
-      "Bash(pnpm install:*)"
+      "Bash(pnpm install:*)",
+      "mcp__next-devtools-mcp__nextjs_index",
+      "mcp__next-devtools-mcp__nextjs_call"
     ],
     "deny": [],
     "ask": []

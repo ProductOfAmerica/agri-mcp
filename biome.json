@@ -18,11 +18,21 @@
     "rules": {
       "recommended": true,
       "correctness": {
-        "noUnknownAtRule": "off"
+        "noUnknownFunction": "off",
+        "noUnknownUnit": "off"
+      },
+      "style": {
+        "noNonNullAssertion": "off"
+      },
+      "suspicious": {
+        "noImplicitAnyLet": "off"
       }
     }
   },
   "css": {
+    "parser": {
+      "tailwindDirectives": true
+    },
     "linter": {
       "enabled": true
     }

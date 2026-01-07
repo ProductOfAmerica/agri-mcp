@@ -13,6 +13,7 @@
   "dependencies": {
     "@agrimcp/types": "workspace:*",
     "@agrimcp/ui": "workspace:*",
+    "@stripe/stripe-js": "^8.6.1",
     "@supabase/ssr": "^0.6.0",
     "@supabase/supabase-js": "^2.89.0",
     "class-variance-authority": "^0.7.1",
@@ -20,7 +21,8 @@
     "lucide-react": "^0.513.0",
     "next": "^16.1.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "stripe": "^20.1.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -3,13 +3,18 @@
   "version": "1.0.0",
   "description": "MCP infrastructure platform for agricultural APIs",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "turbo build",
-    "dev": "turbo dev",
+    "dev": "node scripts/dev.js",
+    "dev:dashboard": "turbo dev --filter=@agrimcp/dashboard",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "check": "turbo check",
-    "clean": "turbo clean"
+    "clean": "turbo clean",
+    "supabase:start": "supabase start --workdir packages/supabase",
+    "supabase:stop": "supabase stop --workdir packages/supabase",
+    "supabase:reset": "supabase db reset --workdir packages/supabase"
   },
   "keywords": [],
   "author": "",

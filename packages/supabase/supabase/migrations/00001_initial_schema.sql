@@ -188,13 +188,13 @@ CREATE POLICY "Developers can view own usage aggregates"
 -- (Service key bypasses RLS by default)
 
 -- Function to create developer on signup
-CREATE OR REPLACE FUNCTION handle_new_user()
+CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO developers (id, email)
+  INSERT INTO public.developers (id, email)
   VALUES (NEW.id, NEW.email);
   
-  INSERT INTO subscriptions (developer_id, tier, status, monthly_request_limit)
+  INSERT INTO public.subscriptions (developer_id, tier, status, monthly_request_limit)
   VALUES (NEW.id, 'free', 'active', 1000);
   
   RETURN NEW;
