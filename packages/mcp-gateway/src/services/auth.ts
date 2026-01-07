@@ -26,7 +26,7 @@ export async function validateApiKey(
   }
 
   const keyHash = await sha256(apiKey);
-  const keyPrefix = apiKey.slice(0, 15);
+  const keyPrefix = apiKey.slice(0, 14);
 
   const cached = await env.API_KEY_CACHE.get(`key:${keyPrefix}`, 'json');
   if (cached) {

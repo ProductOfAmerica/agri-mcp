@@ -1,12 +1,8 @@
+import { type SubscriptionTier, TIER_LIMITS } from '@agrimcp/types';
 import { NextResponse } from 'next/server';
 import { config } from '@/lib/config';
 import { getStripe } from '@/lib/stripe';
 import { createServiceClient } from '@/lib/supabase/service';
-
-const TIER_LIMITS: Record<string, number> = {
-  developer: 50000,
-  startup: 250000,
-};
 
 async function invalidateGatewayCache(developerId: string): Promise<void> {
   if (!config.gateway.internalSecret) return;
@@ -58,7 +54,8 @@ export async function POST(request: Request) {
             stripe_subscription_id: session.subscription as string,
             tier,
             status: 'active',
-            monthly_request_limit: TIER_LIMITS[tier] || 1000,
+            monthly_request_limit:
+              TIER_LIMITS[tier as SubscriptionTier]?.monthly ?? 1000,
           })
           .eq('developer_id', developerId);
         await invalidateGatewayCache(developerId);
