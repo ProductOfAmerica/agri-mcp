@@ -1,0 +1,21 @@
+{
+  "name": "@agrimcp/mcp-gateway",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "check": "tsc --noEmit",
+    "lint": "biome check src/"
+  },
+  "dependencies": {
+    "@agrimcp/types": "workspace:*",
+    "@supabase/supabase-js": "^2.89.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260103.0",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.54.0"
+  }
+}
