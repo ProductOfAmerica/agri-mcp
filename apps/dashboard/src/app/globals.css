@@ -1,1 +1,4 @@
 @import "tailwindcss";
+@import "@agrimcp/ui/styles/globals.css";
+
+@source "../../node_modules/@agrimcp/ui";
