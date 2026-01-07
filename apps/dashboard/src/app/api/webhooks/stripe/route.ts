@@ -1,3 +1,4 @@
+import { revalidateTag } from 'next/cache';
 import { NextResponse } from 'next/server';
 import { config } from '@/lib/config';
 import { getStripe } from '@/lib/stripe';
@@ -44,6 +45,7 @@ export async function POST(request: Request) {
             monthly_request_limit: TIER_LIMITS[tier] || 1000,
           })
           .eq('developer_id', developerId);
+        revalidateTag(`subscription-${developerId}`, { expire: 0 });
       }
       break;
     }
@@ -77,24 +79,34 @@ export async function POST(request: Request) {
         ).toISOString();
       }
 
-      await supabaseAdmin
+      const { data: updatedSub } = await supabaseAdmin
         .from('subscriptions')
         .update(updateData)
-        .eq('stripe_subscription_id', subscription.id);
+        .eq('stripe_subscription_id', subscription.id)
+        .select('developer_id')
+        .single();
+      if (updatedSub) {
+        revalidateTag(`subscription-${updatedSub.developer_id}`, { expire: 0 });
+      }
       break;
     }
 
     case 'customer.subscription.deleted': {
       const subscription = event.data.object;
 
-      await supabaseAdmin
+      const { data: deletedSub } = await supabaseAdmin
         .from('subscriptions')
         .update({
           tier: 'free',
           status: 'canceled',
           monthly_request_limit: 1000,
         })
-        .eq('stripe_subscription_id', subscription.id);
+        .eq('stripe_subscription_id', subscription.id)
+        .select('developer_id')
+        .single();
+      if (deletedSub) {
+        revalidateTag(`subscription-${deletedSub.developer_id}`, { expire: 0 });
+      }
       break;
     }
   }

@@ -14,6 +14,7 @@ import { BillingSkeleton } from '@/components/skeletons';
 import { getSubscription, getUsageStats } from '@/lib/data';
 import { createClient } from '@/lib/supabase/server';
 import { ManageButton } from './manage-button';
+import { SuccessRefresh } from './success-refresh';
 import { UpgradeButton } from './upgrade-button';
 
 const plans = [
@@ -167,6 +168,9 @@ export default async function BillingPage() {
 
   return (
     <div className="space-y-6">
+      <Suspense fallback={null}>
+        <SuccessRefresh />
+      </Suspense>
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Billing</h1>
         <p className="text-muted-foreground">
