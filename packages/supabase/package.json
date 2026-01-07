@@ -1,0 +1,12 @@
+{
+  "name": "@agrimcp/supabase",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "db:reset": "supabase db reset",
+    "db:migrate": "supabase migration up",
+    "db:new": "supabase migration new",
+    "functions:serve": "supabase functions serve",
+    "lint": "biome check supabase/functions/"
+  }
+}
