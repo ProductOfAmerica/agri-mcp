@@ -1,5 +1,6 @@
 const GATEWAY_URL = process.env.MCP_GATEWAY_URL || 'http://localhost:8787';
-const API_KEY = process.env.TEST_API_KEY || 'agri_live_XxylI30hXCCpbjVAo2KnvYKFhocS04cp';
+const API_KEY =
+  process.env.TEST_API_KEY || 'agri_live_Js80KQWsQhACtvQJjouq5SDSg4AAxBtp';
 const FARMER_ID = process.env.TEST_FARMER_ID || 'test-id';
 
 interface McpResponse<T = unknown> {
@@ -58,6 +59,7 @@ export async function rawRequest(
     method?: string;
     headers?: Record<string, string>;
     body?: unknown;
+    rawBody?: boolean;
   },
 ): Promise<Response> {
   return fetch(`${GATEWAY_URL}${path}`, {
@@ -66,7 +68,11 @@ export async function rawRequest(
       'Content-Type': 'application/json',
       ...options?.headers,
     },
-    body: options?.body ? JSON.stringify(options.body) : undefined,
+    body: options?.body
+      ? options.rawBody
+        ? (options.body as string)
+        : JSON.stringify(options.body)
+      : undefined,
   });
 }
 

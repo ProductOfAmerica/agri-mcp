@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeAll } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { mcpCall, mcpListTools, parseToolResponse } from './helpers';
 
 interface Organization {
@@ -22,7 +22,6 @@ interface Equipment {
 }
 
 describe('John Deere MCP', () => {
-  let testOrgId: string;
   let testFieldId: string | null = null;
 
   describe('tools/list', () => {
@@ -30,15 +29,23 @@ describe('John Deere MCP', () => {
       const response = await mcpListTools();
 
       expect(response.tools).toBeDefined();
-      expect(response.tools).toHaveLength(6);
+      expect(response.tools).toHaveLength(12);
 
-      const toolNames = response.tools?.map((t: { name: string }) => t.name);
+      const toolNames = (response.tools as Array<{ name: string }>)?.map(
+        (t) => t.name,
+      );
       expect(toolNames).toContain('list_organizations');
       expect(toolNames).toContain('list_fields');
       expect(toolNames).toContain('get_field_boundary');
       expect(toolNames).toContain('get_harvest_data');
       expect(toolNames).toContain('get_planting_data');
       expect(toolNames).toContain('list_equipment');
+      expect(toolNames).toContain('list_farms');
+      expect(toolNames).toContain('list_clients');
+      expect(toolNames).toContain('list_map_layers');
+      expect(toolNames).toContain('list_crop_types');
+      expect(toolNames).toContain('list_users');
+      expect(toolNames).toContain('list_assets');
     });
   });
 
@@ -54,8 +61,6 @@ describe('John Deere MCP', () => {
       expect(org).toHaveProperty('id');
       expect(org).toHaveProperty('name');
       expect(org).toHaveProperty('provider', 'john_deere');
-
-      testOrgId = org.id;
     });
   });
 
@@ -72,11 +77,6 @@ describe('John Deere MCP', () => {
 
       const response = await mcpCall('list_fields', { organizationId: orgId });
 
-      if (response.error?.message?.includes('Rate limit')) {
-        console.warn('Rate limited, skipping test');
-        return;
-      }
-
       if (response.error?.message?.includes('400')) {
         console.warn('No fields configured in test org, skipping');
         return;
@@ -85,29 +85,29 @@ describe('John Deere MCP', () => {
       const fields = parseToolResponse<Field[]>(response);
       expect(Array.isArray(fields)).toBe(true);
 
-      if (fields.length > 0) {
+      if (fields.length > 0 && fields[0]) {
         testFieldId = fields[0].id;
       }
     });
 
     it('requires organizationId parameter', async () => {
       const response = await mcpCall('list_fields', {});
-      expect(response.error || response.content?.[0]?.text?.includes('error')).toBeTruthy();
+      expect(
+        response.error || response.content?.[0]?.text?.includes('error'),
+      ).toBeTruthy();
     });
   });
 
   describe('get_field_boundary', () => {
     it('requires organizationId and fieldId parameters', async () => {
       const response = await mcpCall('get_field_boundary', {});
-      expect(response.error || response.content?.[0]?.text?.includes('error')).toBeTruthy();
+      expect(
+        response.error || response.content?.[0]?.text?.includes('error'),
+      ).toBeTruthy();
     });
 
     it.skipIf(!testFieldId)('returns GeoJSON for valid field', async () => {
       const orgsResponse = await mcpCall('list_organizations', {});
-      if (orgsResponse.error?.message?.includes('Rate limit')) {
-        console.warn('Rate limited, skipping test');
-        return;
-      }
 
       const orgs = parseToolResponse<Organization[]>(orgsResponse);
       const orgId = orgs[0]?.id;
@@ -116,11 +116,6 @@ describe('John Deere MCP', () => {
         organizationId: orgId,
         fieldId: testFieldId!,
       });
-
-      if (response.error?.message?.includes('Rate limit')) {
-        console.warn('Rate limited, skipping test');
-        return;
-      }
 
       if (!response.error) {
         const boundary = parseToolResponse<{ type: string }>(response);
@@ -132,10 +127,6 @@ describe('John Deere MCP', () => {
   describe('get_harvest_data', () => {
     it('returns harvest data for organization', async () => {
       const orgsResponse = await mcpCall('list_organizations', {});
-      if (orgsResponse.error?.message?.includes('Rate limit')) {
-        console.warn('Rate limited, skipping test');
-        return;
-      }
 
       const orgs = parseToolResponse<Organization[]>(orgsResponse);
       const orgId = orgs[0]?.id;
@@ -145,29 +136,24 @@ describe('John Deere MCP', () => {
         return;
       }
 
-      const response = await mcpCall('get_harvest_data', { organizationId: orgId });
-
-      if (response.error?.message?.includes('Rate limit')) {
-        console.warn('Rate limited, skipping test');
-        return;
-      }
+      const response = await mcpCall('get_harvest_data', {
+        organizationId: orgId,
+      });
 
       expect(response.content || response.error).toBeDefined();
     });
 
     it('requires organizationId parameter', async () => {
       const response = await mcpCall('get_harvest_data', {});
-      expect(response.error || response.content?.[0]?.text?.includes('error')).toBeTruthy();
+      expect(
+        response.error || response.content?.[0]?.text?.includes('error'),
+      ).toBeTruthy();
     });
   });
 
   describe('get_planting_data', () => {
     it('returns planting data for organization', async () => {
       const orgsResponse = await mcpCall('list_organizations', {});
-      if (orgsResponse.error?.message?.includes('Rate limit')) {
-        console.warn('Rate limited, skipping test');
-        return;
-      }
 
       const orgs = parseToolResponse<Organization[]>(orgsResponse);
       const orgId = orgs[0]?.id;
@@ -177,29 +163,24 @@ describe('John Deere MCP', () => {
         return;
       }
 
-      const response = await mcpCall('get_planting_data', { organizationId: orgId });
-
-      if (response.error?.message?.includes('Rate limit')) {
-        console.warn('Rate limited, skipping test');
-        return;
-      }
+      const response = await mcpCall('get_planting_data', {
+        organizationId: orgId,
+      });
 
       expect(response.content || response.error).toBeDefined();
     });
 
     it('requires organizationId parameter', async () => {
       const response = await mcpCall('get_planting_data', {});
-      expect(response.error || response.content?.[0]?.text?.includes('error')).toBeTruthy();
+      expect(
+        response.error || response.content?.[0]?.text?.includes('error'),
+      ).toBeTruthy();
     });
   });
 
   describe('list_equipment', () => {
     it('returns equipment for organization', async () => {
       const orgsResponse = await mcpCall('list_organizations', {});
-      if (orgsResponse.error?.message?.includes('Rate limit')) {
-        console.warn('Rate limited, skipping test');
-        return;
-      }
 
       const orgs = parseToolResponse<Organization[]>(orgsResponse);
       const orgId = orgs[0]?.id;
@@ -209,12 +190,9 @@ describe('John Deere MCP', () => {
         return;
       }
 
-      const response = await mcpCall('list_equipment', { organizationId: orgId });
-
-      if (response.error?.message?.includes('Rate limit')) {
-        console.warn('Rate limited, skipping test');
-        return;
-      }
+      const response = await mcpCall('list_equipment', {
+        organizationId: orgId,
+      });
 
       expect(response.content || response.error).toBeDefined();
       if (response.content) {
@@ -225,7 +203,140 @@ describe('John Deere MCP', () => {
 
     it('requires organizationId parameter', async () => {
       const response = await mcpCall('list_equipment', {});
-      expect(response.error || response.content?.[0]?.text?.includes('error')).toBeTruthy();
+      expect(
+        response.error || response.content?.[0]?.text?.includes('error'),
+      ).toBeTruthy();
+    });
+  });
+
+  describe('list_farms', () => {
+    it('returns farms for organization', async () => {
+      const orgsResponse = await mcpCall('list_organizations', {});
+
+      const orgs = parseToolResponse<Organization[]>(orgsResponse);
+      const orgId = orgs[0]?.id;
+
+      if (!orgId) {
+        console.warn('No organization found, skipping list_farms test');
+        return;
+      }
+
+      const response = await mcpCall('list_farms', { organizationId: orgId });
+
+      expect(response.content || response.error).toBeDefined();
+    });
+
+    it('requires organizationId parameter', async () => {
+      const response = await mcpCall('list_farms', {});
+      expect(
+        response.error || response.content?.[0]?.text?.includes('error'),
+      ).toBeTruthy();
+    });
+  });
+
+  describe('list_clients', () => {
+    it('returns clients for organization', async () => {
+      const orgsResponse = await mcpCall('list_organizations', {});
+
+      const orgs = parseToolResponse<Organization[]>(orgsResponse);
+      const orgId = orgs[0]?.id;
+
+      if (!orgId) {
+        console.warn('No organization found, skipping list_clients test');
+        return;
+      }
+
+      const response = await mcpCall('list_clients', { organizationId: orgId });
+
+      expect(response.content || response.error).toBeDefined();
+    });
+
+    it('requires organizationId parameter', async () => {
+      const response = await mcpCall('list_clients', {});
+      expect(
+        response.error || response.content?.[0]?.text?.includes('error'),
+      ).toBeTruthy();
+    });
+  });
+
+  describe('list_map_layers', () => {
+    it.skipIf(!testFieldId)('returns map layers for field', async () => {
+      const orgsResponse = await mcpCall('list_organizations', {});
+
+      const orgs = parseToolResponse<Organization[]>(orgsResponse);
+      const orgId = orgs[0]?.id;
+
+      const response = await mcpCall('list_map_layers', {
+        organizationId: orgId,
+        fieldId: testFieldId!,
+      });
+
+      expect(response.content || response.error).toBeDefined();
+    });
+
+    it('requires organizationId and fieldId parameters', async () => {
+      const response = await mcpCall('list_map_layers', {});
+      expect(
+        response.error || response.content?.[0]?.text?.includes('error'),
+      ).toBeTruthy();
+    });
+  });
+
+  describe('list_crop_types', () => {
+    it('returns available crop types', async () => {
+      const response = await mcpCall('list_crop_types', {});
+
+      expect(response.content || response.error).toBeDefined();
+    });
+  });
+
+  describe('list_users', () => {
+    it('returns users for organization', async () => {
+      const orgsResponse = await mcpCall('list_organizations', {});
+
+      const orgs = parseToolResponse<Organization[]>(orgsResponse);
+      const orgId = orgs[0]?.id;
+
+      if (!orgId) {
+        console.warn('No organization found, skipping list_users test');
+        return;
+      }
+
+      const response = await mcpCall('list_users', { organizationId: orgId });
+
+      expect(response.content || response.error).toBeDefined();
+    });
+
+    it('requires organizationId parameter', async () => {
+      const response = await mcpCall('list_users', {});
+      expect(
+        response.error || response.content?.[0]?.text?.includes('error'),
+      ).toBeTruthy();
+    });
+  });
+
+  describe('list_assets', () => {
+    it('returns assets for organization', async () => {
+      const orgsResponse = await mcpCall('list_organizations', {});
+
+      const orgs = parseToolResponse<Organization[]>(orgsResponse);
+      const orgId = orgs[0]?.id;
+
+      if (!orgId) {
+        console.warn('No organization found, skipping list_assets test');
+        return;
+      }
+
+      const response = await mcpCall('list_assets', { organizationId: orgId });
+
+      expect(response.content || response.error).toBeDefined();
+    });
+
+    it('requires organizationId parameter', async () => {
+      const response = await mcpCall('list_assets', {});
+      expect(
+        response.error || response.content?.[0]?.text?.includes('error'),
+      ).toBeTruthy();
     });
   });
 
@@ -236,9 +347,13 @@ describe('John Deere MCP', () => {
     });
 
     it('handles invalid farmer connection gracefully', async () => {
-      const response = await mcpCall('list_organizations', {}, {
-        farmerId: 'non-existent-farmer-id',
-      });
+      const response = await mcpCall(
+        'list_organizations',
+        {},
+        {
+          farmerId: 'non-existent-farmer-id',
+        },
+      );
 
       expect(response.error).toBeDefined();
     });
