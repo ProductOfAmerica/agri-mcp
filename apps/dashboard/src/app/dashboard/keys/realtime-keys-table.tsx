@@ -99,7 +99,7 @@ export function RealtimeKeysTable({
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.access_token) {
         setupRealtime(session.access_token);
       }
