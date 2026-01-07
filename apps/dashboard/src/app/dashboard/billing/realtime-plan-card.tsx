@@ -40,6 +40,7 @@ export function RealtimePlanCard({
   const supabase = useMemo(() => createClient(), []);
   const pendingCount = useRef(0);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const channelsRef = useRef<RealtimeChannel[]>([]);
 
   useEffect(() => {
     setSubscription(serverSubscription);
@@ -50,24 +51,57 @@ export function RealtimePlanCard({
   }, [serverUsageCount]);
 
   useEffect(() => {
-    let subscriptionChannel: RealtimeChannel | null = null;
-    let usageChannel: RealtimeChannel | null = null;
     let isMounted = true;
 
-    async function setupRealtime(accessToken: string) {
+    async function fetchCurrentData() {
+      if (!isMounted) return;
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+        debounceTimer.current = null;
+      }
+      pendingCount.current = 0;
+
+      const { data: sub } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('developer_id', userId)
+        .single();
+      if (sub && isMounted) setSubscription(sub);
+
+      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const { count } = await supabase
+        .from('usage_logs')
+        .select('*', { count: 'exact', head: true })
+        .eq('developer_id', userId)
+        .gte('request_timestamp', since.toISOString());
+      if (count !== null && isMounted) setUsageCount(count);
+    }
+
+    function handleFocus() {
+      fetchCurrentData();
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        fetchCurrentData();
+      }
+    }
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    async function setupRealtime() {
+      if (!isMounted) return;
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      await supabase.realtime.setAuth(session.access_token);
       if (!isMounted) return;
 
-      if (subscriptionChannel) {
-        supabase.removeChannel(subscriptionChannel);
-      }
-      if (usageChannel) {
-        supabase.removeChannel(usageChannel);
-      }
-
-      await supabase.realtime.setAuth(accessToken);
-
-      subscriptionChannel = supabase
-        .channel(`billing-subscription-${userId}`)
+      const subscriptionChannel = supabase
+        .channel(`billing-subscription-${userId}-${Date.now()}`)
         .on(
           'postgres_changes',
           {
@@ -77,15 +111,18 @@ export function RealtimePlanCard({
             filter: `developer_id=eq.${userId}`,
           },
           (payload) => {
-            if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+            if (
+              payload.eventType === 'UPDATE' ||
+              payload.eventType === 'INSERT'
+            ) {
               setSubscription(payload.new as Subscription);
             }
           },
         )
         .subscribe();
 
-      usageChannel = supabase
-        .channel(`billing-usage-${userId}`)
+      const usageChannel = supabase
+        .channel(`billing-usage-${userId}-${Date.now()}`)
         .on(
           'postgres_changes',
           {
@@ -94,40 +131,41 @@ export function RealtimePlanCard({
             table: 'usage_logs',
             filter: `developer_id=eq.${userId}`,
           },
-          () => {
+          async () => {
             pendingCount.current++;
             if (debounceTimer.current) {
               clearTimeout(debounceTimer.current);
             }
-            debounceTimer.current = setTimeout(() => {
-              setUsageCount((prev) => prev + pendingCount.current);
+            debounceTimer.current = setTimeout(async () => {
               pendingCount.current = 0;
-            }, 5000);
+              const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+              const { count } = await supabase
+                .from('usage_logs')
+                .select('*', { count: 'exact', head: true })
+                .eq('developer_id', userId)
+                .gte('request_timestamp', since.toISOString());
+              if (count !== null) setUsageCount(count);
+            }, 1000);
           },
         )
         .subscribe();
+
+      channelsRef.current = [subscriptionChannel, usageChannel];
     }
 
-    const {
-      data: { subscription: authSubscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.access_token) {
-        setupRealtime(session.access_token);
-      }
-    });
+    setupRealtime();
 
     return () => {
       isMounted = false;
-      if (subscriptionChannel) {
-        supabase.removeChannel(subscriptionChannel);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      for (const channel of channelsRef.current) {
+        supabase.removeChannel(channel);
       }
-      if (usageChannel) {
-        supabase.removeChannel(usageChannel);
-      }
+      channelsRef.current = [];
       if (debounceTimer.current) {
         clearTimeout(debounceTimer.current);
       }
-      authSubscription.unsubscribe();
     };
   }, [supabase, userId]);
 

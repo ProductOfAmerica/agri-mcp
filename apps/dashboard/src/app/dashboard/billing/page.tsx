@@ -7,14 +7,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@agrimcp/ui/components/card';
-import { Progress } from '@agrimcp/ui/components/progress';
 import { CheckIcon, SparklesIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { BillingSkeleton } from '@/components/skeletons';
 import { getSubscription, getUsageStats } from '@/lib/data';
 import { createClient } from '@/lib/supabase/server';
-import { ManageButton } from './manage-button';
-import { SuccessRefresh } from './success-refresh';
+import { RealtimePlanCard } from './realtime-plan-card';
 import { UpgradeButton } from './upgrade-button';
 
 const plans = [
@@ -52,57 +50,12 @@ async function CurrentPlanCard({ userId }: { userId: string }) {
     getUsageStats(userId),
   ]);
 
-  const tier = subscription?.tier ?? 'free';
-  const isPaid = tier !== 'free';
-  const isCanceling = subscription?.cancel_at_period_end;
-  const requestsUsed = usageStats.length;
-  const requestsLimit = subscription?.monthly_request_limit ?? 1000;
-  const usagePercentage = Math.min((requestsUsed / requestsLimit) * 100, 100);
-
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              Current Plan
-              <Badge variant="secondary" className="capitalize">
-                {tier}
-              </Badge>
-              {isCanceling && (
-                <Badge
-                  variant="outline"
-                  className="text-amber-600 border-amber-300"
-                >
-                  Cancels at period end
-                </Badge>
-              )}
-            </CardTitle>
-            <CardDescription>
-              {requestsLimit.toLocaleString()} requests/month
-            </CardDescription>
-          </div>
-          {isPaid && <ManageButton />}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Monthly usage</span>
-            <span className="font-medium">
-              {requestsUsed.toLocaleString()} / {requestsLimit.toLocaleString()}
-            </span>
-          </div>
-          <Progress value={usagePercentage} className="h-2" />
-        </div>
-        {isCanceling && subscription?.current_period_end && (
-          <p className="text-sm text-amber-600">
-            Your access will continue until{' '}
-            {new Date(subscription.current_period_end).toLocaleDateString()}
-          </p>
-        )}
-      </CardContent>
-    </Card>
+    <RealtimePlanCard
+      serverSubscription={subscription}
+      serverUsageCount={usageStats.length}
+      userId={userId}
+    />
   );
 }
 
@@ -168,9 +121,6 @@ export default async function BillingPage() {
 
   return (
     <div className="space-y-6">
-      <Suspense fallback={null}>
-        <SuccessRefresh />
-      </Suspense>
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Billing</h1>
         <p className="text-muted-foreground">

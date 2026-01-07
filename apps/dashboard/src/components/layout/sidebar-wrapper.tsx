@@ -17,5 +17,11 @@ export async function SidebarWrapper({ userId }: SidebarWrapperProps) {
     limit: subscription?.monthly_request_limit ?? 1000,
   };
 
-  return <AppSidebar usage={usage} plan={subscription?.tier ?? 'Free'} />;
+  return (
+    <AppSidebar
+      usage={usage}
+      plan={subscription?.tier ?? 'free'}
+      userId={userId}
+    />
+  );
 }

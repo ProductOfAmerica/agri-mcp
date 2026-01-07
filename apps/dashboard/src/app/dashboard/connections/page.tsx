@@ -3,7 +3,6 @@ import {
   AlertDescription,
   AlertTitle,
 } from '@agrimcp/ui/components/alert';
-import { Badge } from '@agrimcp/ui/components/badge';
 import {
   Card,
   CardContent,
@@ -11,111 +10,19 @@ import {
   CardHeader,
   CardTitle,
 } from '@agrimcp/ui/components/card';
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@agrimcp/ui/components/empty';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@agrimcp/ui/components/table';
 import { LinkIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { TableSkeleton } from '@/components/skeletons';
 import { getConnections } from '@/lib/data';
 import { createClient } from '@/lib/supabase/server';
 import { ConnectJohnDeereButton } from './connect-john-deere-button';
-import { DisconnectButton } from './disconnect-button';
+import { RealtimeConnectionsTable } from './realtime-connections-table';
 
 async function ConnectionsTable({ userId }: { userId: string }) {
   const connections = await getConnections(userId);
 
-  if (!connections || connections.length === 0) {
-    return (
-      <Empty className="border-0 p-0">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <LinkIcon />
-          </EmptyMedia>
-          <EmptyTitle>No farmer connections yet</EmptyTitle>
-          <EmptyDescription>
-            Connect a farmer's account to start accessing their data.
-          </EmptyDescription>
-        </EmptyHeader>
-        <ConnectJohnDeereButton />
-      </Empty>
-    );
-  }
-
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Farmer ID</TableHead>
-          <TableHead>Provider</TableHead>
-          <TableHead>Connected</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {connections.map((conn) => {
-          const isExpired =
-            conn.token_expires_at &&
-            new Date(conn.token_expires_at) < new Date();
-          return (
-            <TableRow key={conn.id}>
-              <TableCell className="font-mono">
-                {conn.farmer_identifier}
-              </TableCell>
-              <TableCell>
-                <Badge
-                  variant="secondary"
-                  className="bg-green-100 text-green-800"
-                >
-                  {conn.provider === 'john_deere'
-                    ? 'John Deere'
-                    : conn.provider}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-muted-foreground">
-                {new Date(conn.created_at).toLocaleDateString()}
-              </TableCell>
-              <TableCell>
-                {isExpired ? (
-                  <Badge
-                    variant="outline"
-                    className="text-amber-600 border-amber-300"
-                  >
-                    Token expired
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="outline"
-                    className="text-green-600 border-green-300"
-                  >
-                    Active
-                  </Badge>
-                )}
-              </TableCell>
-              <TableCell className="text-right">
-                <DisconnectButton
-                  connectionId={conn.id}
-                  farmerId={conn.farmer_identifier}
-                />
-              </TableCell>
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+    <RealtimeConnectionsTable serverConnections={connections} userId={userId} />
   );
 }
 

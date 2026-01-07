@@ -1,6 +1,5 @@
 'use client';
 
-import { Progress } from '@agrimcp/ui/components/progress';
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +21,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { RealtimeSidebarUsage } from './realtime-sidebar-usage';
 
 const navItems = [
   {
@@ -47,16 +47,16 @@ const navItems = [
 ];
 
 interface AppSidebarProps {
-  usage?: {
+  usage: {
     used: number;
     limit: number;
   };
-  plan?: string;
+  plan: string;
+  userId: string;
 }
 
-export function AppSidebar({ usage, plan = 'Free' }: AppSidebarProps) {
+export function AppSidebar({ usage, plan, userId }: AppSidebarProps) {
   const pathname = usePathname();
-  const usagePercentage = usage ? (usage.used / usage.limit) * 100 : 0;
 
   return (
     <Sidebar collapsible="icon" className="border-r">
@@ -105,21 +105,12 @@ export function AppSidebar({ usage, plan = 'Free' }: AppSidebarProps) {
       </SidebarContent>
 
       <SidebarFooter className="gap-4 p-3 transition-[padding] duration-200 [[data-state=collapsed]_&]:p-2">
-        {usage && (
-          <div className="flex flex-col gap-3 overflow-hidden rounded-md border p-4 [[data-state=collapsed]_&]:hidden">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">API Usage</span>
-              <span className="text-xs text-muted-foreground capitalize">
-                {plan}
-              </span>
-            </div>
-            <Progress value={usagePercentage} className="h-2" />
-            <p className="text-xs text-muted-foreground">
-              {usage.used.toLocaleString()} / {usage.limit.toLocaleString()}{' '}
-              requests
-            </p>
-          </div>
-        )}
+        <RealtimeSidebarUsage
+          serverUsageCount={usage.used}
+          serverLimit={usage.limit}
+          serverPlan={plan}
+          userId={userId}
+        />
       </SidebarFooter>
     </Sidebar>
   );

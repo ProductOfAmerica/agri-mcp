@@ -18,7 +18,7 @@ import {
 } from '@agrimcp/ui/components/table';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { KeyIcon } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { DeleteKeyButton } from './delete-key-button';
 
@@ -43,53 +43,75 @@ export function RealtimeKeysTable({
 }: RealtimeKeysTableProps) {
   const [keys, setKeys] = useState(serverKeys);
   const supabase = useMemo(() => createClient(), []);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
     setKeys(serverKeys);
   }, [serverKeys]);
 
   useEffect(() => {
-    let channel: RealtimeChannel | null = null;
     let isMounted = true;
 
-    async function setupRealtime(accessToken: string) {
+    async function fetchCurrentData() {
+      if (!isMounted) return;
+      const { data } = await supabase
+        .from('api_keys')
+        .select('*')
+        .eq('developer_id', userId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+      if (data && isMounted) setKeys(data);
+    }
+
+    function handleFocus() {
+      fetchCurrentData();
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        fetchCurrentData();
+      }
+    }
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    async function setupRealtime() {
+      if (!isMounted) return;
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      await supabase.realtime.setAuth(session.access_token);
       if (!isMounted) return;
 
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
-
-      await supabase.realtime.setAuth(accessToken);
-
-      channel = supabase
-        .channel(`api-keys-changes-${userId}`)
+      channelRef.current = supabase
+        .channel(`api-keys-changes-${userId}-${Date.now()}`)
         .on(
           'postgres_changes',
           {
             event: '*',
             schema: 'public',
             table: 'api_keys',
+            filter: `developer_id=eq.${userId}`,
           },
           (payload) => {
             if (payload.eventType === 'INSERT') {
               const newKey = payload.new as ApiKey;
-              if (newKey.is_active && newKey.developer_id === userId) {
+              if (newKey.is_active) {
                 setKeys((current) => [newKey, ...current]);
               }
             } else if (payload.eventType === 'UPDATE') {
               const updatedKey = payload.new as ApiKey;
-              if (updatedKey.developer_id === userId) {
-                if (!updatedKey.is_active) {
-                  setKeys((current) =>
-                    current.filter((k) => k.id !== updatedKey.id),
-                  );
-                } else {
-                  setKeys((current) =>
-                    current.map((k) =>
-                      k.id === updatedKey.id ? updatedKey : k,
-                    ),
-                  );
-                }
+              if (!updatedKey.is_active) {
+                setKeys((current) =>
+                  current.filter((k) => k.id !== updatedKey.id),
+                );
+              } else {
+                setKeys((current) =>
+                  current.map((k) => (k.id === updatedKey.id ? updatedKey : k)),
+                );
               }
             }
           },
@@ -97,20 +119,15 @@ export function RealtimeKeysTable({
         .subscribe();
     }
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.access_token) {
-        setupRealtime(session.access_token);
-      }
-    });
+    setupRealtime();
 
     return () => {
       isMounted = false;
-      if (channel) {
-        supabase.removeChannel(channel);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
       }
-      subscription.unsubscribe();
     };
   }, [supabase, userId]);
 

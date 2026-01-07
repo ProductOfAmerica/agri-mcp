@@ -49,7 +49,9 @@ function buildChartData(logs: UsageLog[]) {
     const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
     const dateStr = date.toISOString().split('T')[0];
     const dayRequests = logs.filter((log) => {
-      const logDate = new Date(log.request_timestamp).toISOString().split('T')[0];
+      const logDate = new Date(log.request_timestamp)
+        .toISOString()
+        .split('T')[0];
       return logDate === dateStr;
     }).length;
     chartData.push({ date: dateStr, requests: dayRequests });
@@ -62,31 +64,67 @@ export function RealtimeUsageChart({
   userId,
 }: RealtimeUsageChartProps) {
   const [logs, setLogs] = useState(serverUsageLogs);
-  const [chartData, setChartData] = useState(() => buildChartData(serverUsageLogs));
+  const [chartData, setChartData] = useState(() =>
+    buildChartData(serverUsageLogs),
+  );
   const supabase = useMemo(() => createClient(), []);
   const pendingLogs = useRef<UsageLog[]>([]);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
     setLogs(serverUsageLogs);
-    setChartData(buildChartData(serverUsageLogs));
   }, [serverUsageLogs]);
 
   useEffect(() => {
-    let channel: RealtimeChannel | null = null;
+    setChartData(buildChartData(logs));
+  }, [logs]);
+
+  useEffect(() => {
     let isMounted = true;
 
-    async function setupRealtime(accessToken: string) {
+    async function fetchCurrentData() {
+      if (!isMounted) return;
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+        debounceTimer.current = null;
+      }
+      pendingLogs.current = [];
+
+      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const { data } = await supabase
+        .from('usage_logs')
+        .select('id, request_timestamp')
+        .eq('developer_id', userId)
+        .gte('request_timestamp', since.toISOString());
+      if (data && isMounted) setLogs(data);
+    }
+
+    function handleFocus() {
+      fetchCurrentData();
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        fetchCurrentData();
+      }
+    }
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    async function setupRealtime() {
+      if (!isMounted) return;
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      await supabase.realtime.setAuth(session.access_token);
       if (!isMounted) return;
 
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
-
-      await supabase.realtime.setAuth(accessToken);
-
-      channel = supabase
-        .channel(`usage-chart-${userId}`)
+      channelRef.current = supabase
+        .channel(`usage-chart-${userId}-${Date.now()}`)
         .on(
           'postgres_changes',
           {
@@ -103,35 +141,27 @@ export function RealtimeUsageChart({
               clearTimeout(debounceTimer.current);
             }
             debounceTimer.current = setTimeout(() => {
-              setLogs((prev) => {
-                const updated = [...prev, ...pendingLogs.current];
-                pendingLogs.current = [];
-                setChartData(buildChartData(updated));
-                return updated;
-              });
-            }, 5000);
+              const newLogs = [...pendingLogs.current];
+              pendingLogs.current = [];
+              setLogs((prev) => [...prev, ...newLogs]);
+            }, 1000);
           },
         )
         .subscribe();
     }
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.access_token) {
-        setupRealtime(session.access_token);
-      }
-    });
+    setupRealtime();
 
     return () => {
       isMounted = false;
-      if (channel) {
-        supabase.removeChannel(channel);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
       }
       if (debounceTimer.current) {
         clearTimeout(debounceTimer.current);
       }
-      subscription.unsubscribe();
     };
   }, [supabase, userId]);
 

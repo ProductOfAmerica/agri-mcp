@@ -18,7 +18,7 @@ import {
 } from '@agrimcp/ui/components/table';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { LinkIcon } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { ConnectJohnDeereButton } from './connect-john-deere-button';
 import { DisconnectButton } from './disconnect-button';
@@ -44,53 +44,77 @@ export function RealtimeConnectionsTable({
 }: RealtimeConnectionsTableProps) {
   const [connections, setConnections] = useState(serverConnections);
   const supabase = useMemo(() => createClient(), []);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
     setConnections(serverConnections);
   }, [serverConnections]);
 
   useEffect(() => {
-    let channel: RealtimeChannel | null = null;
     let isMounted = true;
 
-    async function setupRealtime(accessToken: string) {
+    async function fetchCurrentData() {
+      if (!isMounted) return;
+      const { data } = await supabase
+        .from('farmer_connections')
+        .select('*')
+        .eq('developer_id', userId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+      if (data && isMounted) setConnections(data);
+    }
+
+    function handleFocus() {
+      fetchCurrentData();
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        fetchCurrentData();
+      }
+    }
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    async function setupRealtime() {
+      if (!isMounted) return;
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      await supabase.realtime.setAuth(session.access_token);
       if (!isMounted) return;
 
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
-
-      await supabase.realtime.setAuth(accessToken);
-
-      channel = supabase
-        .channel(`connections-changes-${userId}`)
+      channelRef.current = supabase
+        .channel(`connections-changes-${userId}-${Date.now()}`)
         .on(
           'postgres_changes',
           {
             event: '*',
             schema: 'public',
             table: 'farmer_connections',
+            filter: `developer_id=eq.${userId}`,
           },
           (payload) => {
             if (payload.eventType === 'INSERT') {
               const newConn = payload.new as Connection;
-              if (newConn.is_active && newConn.developer_id === userId) {
+              if (newConn.is_active) {
                 setConnections((current) => [newConn, ...current]);
               }
             } else if (payload.eventType === 'UPDATE') {
               const updatedConn = payload.new as Connection;
-              if (updatedConn.developer_id === userId) {
-                if (!updatedConn.is_active) {
-                  setConnections((current) =>
-                    current.filter((c) => c.id !== updatedConn.id),
-                  );
-                } else {
-                  setConnections((current) =>
-                    current.map((c) =>
-                      c.id === updatedConn.id ? updatedConn : c,
-                    ),
-                  );
-                }
+              if (!updatedConn.is_active) {
+                setConnections((current) =>
+                  current.filter((c) => c.id !== updatedConn.id),
+                );
+              } else {
+                setConnections((current) =>
+                  current.map((c) =>
+                    c.id === updatedConn.id ? updatedConn : c,
+                  ),
+                );
               }
             }
           },
@@ -98,20 +122,15 @@ export function RealtimeConnectionsTable({
         .subscribe();
     }
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.access_token) {
-        setupRealtime(session.access_token);
-      }
-    });
+    setupRealtime();
 
     return () => {
       isMounted = false;
-      if (channel) {
-        supabase.removeChannel(channel);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
       }
-      subscription.unsubscribe();
     };
   }, [supabase, userId]);
 
