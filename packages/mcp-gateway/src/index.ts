@@ -101,14 +101,23 @@ async function handleCacheInvalidation(
     .select('key_prefix')
     .eq('developer_id', developerId);
 
+  const deletions: Promise<void>[] = [];
+
   if (apiKeys && apiKeys.length > 0) {
-    await Promise.all(
-      apiKeys.map((key) => env.API_KEY_CACHE.delete(`key:${key.key_prefix}`)),
-    );
+    for (const key of apiKeys) {
+      deletions.push(env.API_KEY_CACHE.delete(`key:${key.key_prefix}`));
+    }
   }
 
+  deletions.push(env.RATE_LIMITS.delete(`rate:${developerId}`));
+
+  await Promise.all(deletions);
+
   return new Response(
-    JSON.stringify({ invalidated: apiKeys?.length ?? 0 }),
+    JSON.stringify({
+      invalidated: apiKeys?.length ?? 0,
+      rateLimitCleared: true,
+    }),
     { status: 200, headers: { 'Content-Type': 'application/json' } },
   );
 }

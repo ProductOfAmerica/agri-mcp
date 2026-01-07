@@ -1,34 +1,46 @@
-const getAppUrl = () => {
-  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
-  if (process.env.VERCEL_PROJECT_PRODUCTION_URL)
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
+
+function getAppUrl(): string {
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
     return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return 'http://localhost:3000';
-};
+  }
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL;
+  }
+  throw new Error(
+    'Missing required environment variable: VERCEL_PROJECT_PRODUCTION_URL or NEXT_PUBLIC_APP_URL',
+  );
+}
 
 export const config = {
   appUrl: getAppUrl(),
   isProduction: process.env.NODE_ENV === 'production',
 
   supabase: {
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-    anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '',
-    serviceKey: process.env.SUPABASE_SERVICE_KEY ?? '',
+    url: requireEnv('NEXT_PUBLIC_SUPABASE_URL'),
+    anonKey: requireEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
+    serviceKey: requireEnv('SUPABASE_SERVICE_KEY'),
   },
 
   stripe: {
-    secretKey: process.env.STRIPE_SECRET_KEY!,
-    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
+    secretKey: requireEnv('STRIPE_SECRET_KEY'),
+    webhookSecret: requireEnv('STRIPE_WEBHOOK_SECRET'),
     prices: {
-      developer: process.env.STRIPE_DEVELOPER_PRICE_ID!,
-      startup: process.env.STRIPE_STARTUP_PRICE_ID!,
+      developer: requireEnv('STRIPE_DEVELOPER_PRICE_ID'),
+      startup: requireEnv('STRIPE_STARTUP_PRICE_ID'),
     },
   },
 
   johnDeere: {
-    clientId: process.env.JOHN_DEERE_CLIENT_ID ?? '',
-    clientSecret: process.env.JOHN_DEERE_CLIENT_SECRET ?? '',
-    redirectUri: process.env.JOHN_DEERE_REDIRECT_URI ?? '',
+    clientId: requireEnv('JOHN_DEERE_CLIENT_ID'),
+    clientSecret: requireEnv('JOHN_DEERE_CLIENT_SECRET'),
+    redirectUri: requireEnv('JOHN_DEERE_REDIRECT_URI'),
     authUrl:
       'https://signin.johndeere.com/oauth2/aus78tnlaysMraFhC1t7/v1/authorize',
     tokenUrl:
@@ -36,8 +48,8 @@ export const config = {
   },
 
   gateway: {
-    internalUrl: process.env.GATEWAY_INTERNAL_URL ?? 'http://localhost:8787',
-    internalSecret: process.env.GATEWAY_INTERNAL_SECRET ?? '',
+    internalUrl: requireEnv('GATEWAY_INTERNAL_URL'),
+    internalSecret: requireEnv('GATEWAY_INTERNAL_SECRET'),
   },
 } as const;
 
