@@ -48,8 +48,12 @@ export const config = {
   },
 
   gateway: {
-    internalUrl: requireEnv('GATEWAY_INTERNAL_URL'),
-    internalSecret: requireEnv('GATEWAY_INTERNAL_SECRET'),
+    get internalUrl() {
+      return requireEnv('GATEWAY_INTERNAL_URL');
+    },
+    get internalSecret() {
+      return requireEnv('GATEWAY_INTERNAL_SECRET');
+    },
   },
 } as const;
 
