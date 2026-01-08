@@ -14,7 +14,11 @@ import {
   checkRateLimit,
   recordAuthFailure,
 } from '../services/rate-limit.js';
-import { extractProvider, routeToProvider } from '../services/router.js';
+import {
+  getFarmerConnections,
+  type Provider,
+  routeToProvider,
+} from '../services/router.js';
 import { logUsage } from '../services/usage.js';
 
 export interface GatewayEnv extends Env {
@@ -27,7 +31,6 @@ export async function handleMcpRequest(
   ctx: ExecutionContext,
 ): Promise<Response> {
   const startTime = Date.now();
-  const url = new URL(request.url);
 
   const apiKey = extractApiKey(request);
   const authRateLimitKey = apiKey ? apiKey.slice(0, 14) : 'unknown';
@@ -55,12 +58,22 @@ export async function handleMcpRequest(
 
   const { developer, subscription, keyId } = validation;
 
-  const provider = extractProvider(url.pathname);
-  if (!provider) {
-    throw Errors.notFound('Provider');
-  }
+  const farmerId = request.headers.get('X-Farmer-ID');
+  validateFarmerId(farmerId);
 
-  validateFarmerId(request.headers.get('X-Farmer-ID'));
+  const connectedProviders = await getFarmerConnections(
+    developer.id,
+    farmerId!,
+    env,
+  );
+
+  if (connectedProviders.length === 0) {
+    throw new ApiError(
+      400,
+      'No providers connected for this farmer. Connect a provider in the dashboard first.',
+      'NO_PROVIDERS',
+    );
+  }
 
   const counterStub = env.MONTHLY_COUNTER.get(
     env.MONTHLY_COUNTER.idFromName(developer.id),
@@ -96,8 +109,33 @@ export async function handleMcpRequest(
     throw e;
   }
 
-  const sanitizedBody = sanitizeObject(body);
+  const sanitizedBody = sanitizeObject(body) as {
+    method?: string;
+    params?: { arguments?: { provider?: Provider } };
+  };
   const toolName = extractToolName(sanitizedBody);
+
+  const requestedProvider = sanitizedBody.params?.arguments?.provider;
+  let provider: Provider;
+
+  if (requestedProvider) {
+    if (!connectedProviders.includes(requestedProvider)) {
+      throw new ApiError(
+        400,
+        `Provider '${requestedProvider}' is not connected for this farmer`,
+        'PROVIDER_NOT_CONNECTED',
+      );
+    }
+    provider = requestedProvider;
+  } else if (connectedProviders.length === 1) {
+    provider = connectedProviders[0]!;
+  } else {
+    throw new ApiError(
+      400,
+      `Multiple providers connected. Specify 'provider' in arguments: ${connectedProviders.join(', ')}`,
+      'AMBIGUOUS_PROVIDER',
+    );
+  }
 
   const modifiedRequest = new Request(request.url, {
     method: 'POST',

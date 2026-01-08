@@ -92,7 +92,7 @@ describe('Security Tests', () => {
 
   describe('Request Handling Attacks', () => {
     it('rejects malformed JSON body', async () => {
-      const response = await rawRequest('/v1/john-deere', {
+      const response = await rawRequest('/v1/mcp', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${TEST_CONFIG.API_KEY}`,
@@ -106,7 +106,7 @@ describe('Security Tests', () => {
     });
 
     it('rejects request without Content-Type header', async () => {
-      const response = await fetch(`${TEST_CONFIG.GATEWAY_URL}/v1/john-deere`, {
+      const response = await fetch(`${TEST_CONFIG.GATEWAY_URL}/v1/mcp`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${TEST_CONFIG.API_KEY}`,
@@ -133,7 +133,7 @@ describe('Security Tests', () => {
           },
         },
       };
-      const response = await rawRequest('/v1/john-deere', {
+      const response = await rawRequest('/v1/mcp', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${TEST_CONFIG.API_KEY}`,
@@ -145,7 +145,7 @@ describe('Security Tests', () => {
     });
 
     it('ignores client-supplied X-Developer-ID header', async () => {
-      const response = await rawRequest('/v1/john-deere', {
+      const response = await rawRequest('/v1/mcp', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${TEST_CONFIG.API_KEY}`,
@@ -163,7 +163,7 @@ describe('Security Tests', () => {
 
     it('rejects CRLF injection in headers via farmer ID', async () => {
       await expect(
-        rawRequest('/v1/john-deere', {
+        rawRequest('/v1/mcp', {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${TEST_CONFIG.API_KEY}`,
@@ -179,7 +179,7 @@ describe('Security Tests', () => {
     });
 
     it('handles empty request body', async () => {
-      const response = await fetch(`${TEST_CONFIG.GATEWAY_URL}/v1/john-deere`, {
+      const response = await fetch(`${TEST_CONFIG.GATEWAY_URL}/v1/mcp`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${TEST_CONFIG.API_KEY}`,
@@ -191,7 +191,7 @@ describe('Security Tests', () => {
     });
 
     it('rejects GET request to POST-only endpoint', async () => {
-      const response = await fetch(`${TEST_CONFIG.GATEWAY_URL}/v1/john-deere`, {
+      const response = await fetch(`${TEST_CONFIG.GATEWAY_URL}/v1/mcp`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${TEST_CONFIG.API_KEY}`,
@@ -204,7 +204,7 @@ describe('Security Tests', () => {
 
   describe('API Key Security', () => {
     it('rejects empty bearer token', async () => {
-      const response = await rawRequest('/v1/john-deere', {
+      const response = await rawRequest('/v1/mcp', {
         method: 'POST',
         headers: {
           Authorization: 'Bearer ',
@@ -220,7 +220,7 @@ describe('Security Tests', () => {
     });
 
     it('rejects malformed API key format', async () => {
-      const response = await rawRequest('/v1/john-deere', {
+      const response = await rawRequest('/v1/mcp', {
         method: 'POST',
         headers: {
           Authorization: 'Bearer agri_live_',
@@ -236,7 +236,7 @@ describe('Security Tests', () => {
     });
 
     it('rejects API key without prefix', async () => {
-      const response = await rawRequest('/v1/john-deere', {
+      const response = await rawRequest('/v1/mcp', {
         method: 'POST',
         headers: {
           Authorization: 'Bearer invalidkey12345678901234567890ab',
@@ -252,7 +252,7 @@ describe('Security Tests', () => {
     });
 
     it('rejects missing Authorization header', async () => {
-      const response = await rawRequest('/v1/john-deere', {
+      const response = await rawRequest('/v1/mcp', {
         method: 'POST',
         headers: {
           'X-Farmer-ID': TEST_CONFIG.FARMER_ID,
@@ -267,7 +267,7 @@ describe('Security Tests', () => {
     });
 
     it('rejects Basic auth instead of Bearer', async () => {
-      const response = await rawRequest('/v1/john-deere', {
+      const response = await rawRequest('/v1/mcp', {
         method: 'POST',
         headers: {
           Authorization: `Basic ${btoa('user:pass')}`,
@@ -289,7 +289,7 @@ describe('Security Tests', () => {
 
       for (let i = 0; i < iterations; i++) {
         const startInvalid = performance.now();
-        await rawRequest('/v1/john-deere', {
+        await rawRequest('/v1/mcp', {
           method: 'POST',
           headers: {
             Authorization: 'Bearer agri_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
@@ -300,7 +300,7 @@ describe('Security Tests', () => {
         invalidTimes.push(performance.now() - startInvalid);
 
         const startValid = performance.now();
-        await rawRequest('/v1/john-deere', {
+        await rawRequest('/v1/mcp', {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${TEST_CONFIG.API_KEY}`,
@@ -323,7 +323,7 @@ describe('Security Tests', () => {
 
   describe('Rate Limiting Security', () => {
     it('rate limit headers are present in response', async () => {
-      const response = await rawRequest('/v1/john-deere', {
+      const response = await rawRequest('/v1/mcp', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${TEST_CONFIG.API_KEY}`,
@@ -339,7 +339,7 @@ describe('Security Tests', () => {
     });
 
     it('rate limit decrements with each request', async () => {
-      const response1 = await rawRequest('/v1/john-deere', {
+      const response1 = await rawRequest('/v1/mcp', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${TEST_CONFIG.API_KEY}`,
@@ -348,7 +348,7 @@ describe('Security Tests', () => {
         body: { jsonrpc: '2.0', id: 1, method: 'tools/list' },
       });
 
-      const response2 = await rawRequest('/v1/john-deere', {
+      const response2 = await rawRequest('/v1/mcp', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${TEST_CONFIG.API_KEY}`,
@@ -372,7 +372,7 @@ describe('Security Tests', () => {
 
   describe('CORS Security', () => {
     it('returns CORS headers on OPTIONS request', async () => {
-      const response = await fetch(`${TEST_CONFIG.GATEWAY_URL}/v1/john-deere`, {
+      const response = await fetch(`${TEST_CONFIG.GATEWAY_URL}/v1/mcp`, {
         method: 'OPTIONS',
       });
       expect(response.status).toBe(204);
@@ -386,7 +386,7 @@ describe('Security Tests', () => {
     });
 
     it('returns CORS headers on actual request', async () => {
-      const response = await rawRequest('/v1/john-deere', {
+      const response = await rawRequest('/v1/mcp', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${TEST_CONFIG.API_KEY}`,
@@ -403,7 +403,7 @@ describe('Security Tests', () => {
     });
 
     it('preflight includes allowed headers', async () => {
-      const response = await fetch(`${TEST_CONFIG.GATEWAY_URL}/v1/john-deere`, {
+      const response = await fetch(`${TEST_CONFIG.GATEWAY_URL}/v1/mcp`, {
         method: 'OPTIONS',
         headers: {
           Origin: 'https://example.com',
@@ -421,7 +421,7 @@ describe('Security Tests', () => {
 
   describe('JSON-RPC Security', () => {
     it('rejects invalid JSON-RPC version', async () => {
-      const response = await rawRequest('/v1/john-deere', {
+      const response = await rawRequest('/v1/mcp', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${TEST_CONFIG.API_KEY}`,
@@ -437,7 +437,7 @@ describe('Security Tests', () => {
     });
 
     it('handles missing method field', async () => {
-      const response = await rawRequest('/v1/john-deere', {
+      const response = await rawRequest('/v1/mcp', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${TEST_CONFIG.API_KEY}`,
@@ -452,7 +452,7 @@ describe('Security Tests', () => {
     });
 
     it('handles batch requests', async () => {
-      const response = await rawRequest('/v1/john-deere', {
+      const response = await rawRequest('/v1/mcp', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${TEST_CONFIG.API_KEY}`,

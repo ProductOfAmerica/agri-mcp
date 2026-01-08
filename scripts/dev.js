@@ -31,18 +31,22 @@ function checkSecretsMatch() {
   const gatewayContent = readFileSync(gatewayDevVars, 'utf-8');
   const johnDeereContent = readFileSync(johnDeereDevVars, 'utf-8');
 
-  const gatewaySecretMatch = gatewayContent.match(
-    /GATEWAY_SECRET=(.+)/,
-  );
-  const johnDeereSecretMatch = johnDeereContent.match(
-    /GATEWAY_SECRET=(.+)/,
-  );
+  const gatewaySecretMatch = gatewayContent.match(/GATEWAY_SECRET=(.+)/);
+  const johnDeereSecretMatch = johnDeereContent.match(/GATEWAY_SECRET=(.+)/);
 
   if (gatewaySecretMatch && johnDeereSecretMatch) {
     if (gatewaySecretMatch[1].trim() !== johnDeereSecretMatch[1].trim()) {
       log('ERROR', colors.red, 'GATEWAY_SECRET MISMATCH!');
-      log('ERROR', colors.red, `  mcp-gateway: ${gatewaySecretMatch[1].trim()}`);
-      log('ERROR', colors.red, `  mcp-john-deere: ${johnDeereSecretMatch[1].trim()}`);
+      log(
+        'ERROR',
+        colors.red,
+        `  mcp-gateway: ${gatewaySecretMatch[1].trim()}`,
+      );
+      log(
+        'ERROR',
+        colors.red,
+        `  mcp-john-deere: ${johnDeereSecretMatch[1].trim()}`,
+      );
       log(
         'ERROR',
         colors.red,
@@ -57,9 +61,7 @@ function checkSecretsMatch() {
   }
 
   const envContent = readFileSync(ENV_FILE, 'utf-8');
-  const internalSecretMatch = gatewayContent.match(
-    /INTERNAL_SECRET=(.+)/,
-  );
+  const internalSecretMatch = gatewayContent.match(/INTERNAL_SECRET=(.+)/);
   const envMatch = envContent.match(/GATEWAY_INTERNAL_SECRET=(.+)/);
 
   if (internalSecretMatch && envMatch) {
@@ -67,11 +69,7 @@ function checkSecretsMatch() {
     const envSecret = envMatch[1].trim();
     if (devVarsSecret !== envSecret) {
       log('ERROR', colors.red, 'INTERNAL_SECRET MISMATCH!');
-      log(
-        'ERROR',
-        colors.red,
-        `  mcp-gateway .dev.vars: ${devVarsSecret}`,
-      );
+      log('ERROR', colors.red, `  mcp-gateway .dev.vars: ${devVarsSecret}`);
       log('ERROR', colors.red, `  dashboard .env.local: ${envSecret}`);
       log(
         'ERROR',

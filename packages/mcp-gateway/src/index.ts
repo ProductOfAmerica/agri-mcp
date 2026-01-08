@@ -31,6 +31,10 @@ export default {
       return handleCacheInvalidation(request, env);
     }
 
+    if (!url.pathname.startsWith('/v1/mcp')) {
+      return withCors(Errors.notFound('Endpoint').toResponse());
+    }
+
     if (request.method !== 'POST') {
       return withCors(
         new ApiError(

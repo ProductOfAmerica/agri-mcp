@@ -10,7 +10,7 @@ describe('MCP Gateway', () => {
     });
 
     it('rejects missing API key', async () => {
-      const response = await rawRequest('/v1/john-deere', {
+      const response = await rawRequest('/v1/mcp', {
         headers: {
           'X-Farmer-ID': TEST_CONFIG.FARMER_ID,
         },
@@ -23,7 +23,7 @@ describe('MCP Gateway', () => {
     });
 
     it('rejects invalid API key', async () => {
-      const response = await rawRequest('/v1/john-deere', {
+      const response = await rawRequest('/v1/mcp', {
         headers: {
           Authorization: 'Bearer agri_live_invalid_key_here_12345678',
           'X-Farmer-ID': TEST_CONFIG.FARMER_ID,
@@ -37,7 +37,7 @@ describe('MCP Gateway', () => {
     });
 
     it('rejects malformed API key prefix', async () => {
-      const response = await rawRequest('/v1/john-deere', {
+      const response = await rawRequest('/v1/mcp', {
         headers: {
           Authorization: 'Bearer wrong_prefix_key_here',
           'X-Farmer-ID': TEST_CONFIG.FARMER_ID,
@@ -51,7 +51,7 @@ describe('MCP Gateway', () => {
 
   describe('farmer ID header', () => {
     it('rejects missing X-Farmer-ID header', async () => {
-      const response = await rawRequest('/v1/john-deere', {
+      const response = await rawRequest('/v1/mcp', {
         headers: {
           Authorization: `Bearer ${TEST_CONFIG.API_KEY}`,
         },
@@ -65,8 +65,8 @@ describe('MCP Gateway', () => {
   });
 
   describe('routing', () => {
-    it('returns 404 for unknown provider', async () => {
-      const response = await rawRequest('/v1/unknown-provider', {
+    it('returns 404 for invalid path', async () => {
+      const response = await rawRequest('/invalid', {
         headers: {
           Authorization: `Bearer ${TEST_CONFIG.API_KEY}`,
           'X-Farmer-ID': TEST_CONFIG.FARMER_ID,
@@ -77,8 +77,8 @@ describe('MCP Gateway', () => {
       expect(response.status).toBe(404);
     });
 
-    it('returns 404 for invalid path', async () => {
-      const response = await rawRequest('/invalid', {
+    it('returns 404 for old provider-specific endpoints', async () => {
+      const response = await rawRequest('/v1/john-deere', {
         headers: {
           Authorization: `Bearer ${TEST_CONFIG.API_KEY}`,
           'X-Farmer-ID': TEST_CONFIG.FARMER_ID,
@@ -92,7 +92,7 @@ describe('MCP Gateway', () => {
 
   describe('rate limiting headers', () => {
     it('includes rate limit headers in response', async () => {
-      const response = await rawRequest('/v1/john-deere', {
+      const response = await rawRequest('/v1/mcp', {
         headers: {
           Authorization: `Bearer ${TEST_CONFIG.API_KEY}`,
           'X-Farmer-ID': TEST_CONFIG.FARMER_ID,

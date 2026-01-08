@@ -24,32 +24,60 @@ const safeIdOptional = z
   .transform(stripControlChars)
   .optional();
 
-export const listOrganizationsSchema = z.object({});
-export const listFieldsSchema = z.object({ organizationId: safeId });
+const providerSchema = z.enum(['john_deere', 'climate', 'cnhi']).optional();
+
+export const listOrganizationsSchema = z.object({
+  provider: providerSchema,
+});
+export const listFieldsSchema = z.object({
+  organizationId: safeId,
+  provider: providerSchema,
+});
 export const getFieldBoundarySchema = z.object({
   organizationId: safeId,
   fieldId: safeId,
+  provider: providerSchema,
 });
 export const getHarvestDataSchema = z.object({
   organizationId: safeId,
   fieldId: safeIdOptional,
   year: z.number().int().min(1900).max(2100).optional(),
+  provider: providerSchema,
 });
 export const getPlantingDataSchema = z.object({
   organizationId: safeId,
   fieldId: safeIdOptional,
   year: z.number().int().min(1900).max(2100).optional(),
+  provider: providerSchema,
 });
-export const listEquipmentSchema = z.object({ organizationId: safeId });
-export const listFarmsSchema = z.object({ organizationId: safeId });
-export const listClientsSchema = z.object({ organizationId: safeId });
+export const listEquipmentSchema = z.object({
+  organizationId: safeId,
+  provider: providerSchema,
+});
+export const listFarmsSchema = z.object({
+  organizationId: safeId,
+  provider: providerSchema,
+});
+export const listClientsSchema = z.object({
+  organizationId: safeId,
+  provider: providerSchema,
+});
 export const listMapLayersSchema = z.object({
   organizationId: safeId,
   fieldId: safeId,
+  provider: providerSchema,
 });
-export const listCropTypesSchema = z.object({});
-export const listUsersSchema = z.object({ organizationId: safeId });
-export const listAssetsSchema = z.object({ organizationId: safeId });
+export const listCropTypesSchema = z.object({
+  provider: providerSchema,
+});
+export const listUsersSchema = z.object({
+  organizationId: safeId,
+  provider: providerSchema,
+});
+export const listAssetsSchema = z.object({
+  organizationId: safeId,
+  provider: providerSchema,
+});
 
 export async function listOrganizations(
   _: unknown,
@@ -231,19 +259,32 @@ export async function listAssets(
   };
 }
 
+const providerProperty = {
+  type: 'string',
+  enum: ['john_deere', 'climate', 'cnhi'],
+  description: 'Provider to use. Optional if only one provider is connected.',
+};
+
 export const toolDefinitions = [
   {
     name: 'list_organizations',
     description:
       'List all Operations Center organizations the farmer has granted access to.',
-    inputSchema: { type: 'object', properties: {}, required: [] },
+    inputSchema: {
+      type: 'object',
+      properties: { provider: providerProperty },
+      required: [],
+    },
   },
   {
     name: 'list_fields',
     description: 'List all fields for an organization.',
     inputSchema: {
       type: 'object',
-      properties: { organizationId: { type: 'string' } },
+      properties: {
+        organizationId: { type: 'string' },
+        provider: providerProperty,
+      },
       required: ['organizationId'],
     },
   },
@@ -255,6 +296,7 @@ export const toolDefinitions = [
       properties: {
         organizationId: { type: 'string' },
         fieldId: { type: 'string' },
+        provider: providerProperty,
       },
       required: ['organizationId', 'fieldId'],
     },
@@ -268,6 +310,7 @@ export const toolDefinitions = [
         organizationId: { type: 'string' },
         fieldId: { type: 'string' },
         year: { type: 'number' },
+        provider: providerProperty,
       },
       required: ['organizationId'],
     },
@@ -281,6 +324,7 @@ export const toolDefinitions = [
         organizationId: { type: 'string' },
         fieldId: { type: 'string' },
         year: { type: 'number' },
+        provider: providerProperty,
       },
       required: ['organizationId'],
     },
@@ -290,7 +334,10 @@ export const toolDefinitions = [
     description: 'List equipment/machines for an organization.',
     inputSchema: {
       type: 'object',
-      properties: { organizationId: { type: 'string' } },
+      properties: {
+        organizationId: { type: 'string' },
+        provider: providerProperty,
+      },
       required: ['organizationId'],
     },
   },
@@ -299,7 +346,10 @@ export const toolDefinitions = [
     description: 'List all farms for an organization.',
     inputSchema: {
       type: 'object',
-      properties: { organizationId: { type: 'string' } },
+      properties: {
+        organizationId: { type: 'string' },
+        provider: providerProperty,
+      },
       required: ['organizationId'],
     },
   },
@@ -308,7 +358,10 @@ export const toolDefinitions = [
     description: 'List all clients for an organization.',
     inputSchema: {
       type: 'object',
-      properties: { organizationId: { type: 'string' } },
+      properties: {
+        organizationId: { type: 'string' },
+        provider: providerProperty,
+      },
       required: ['organizationId'],
     },
   },
@@ -321,6 +374,7 @@ export const toolDefinitions = [
       properties: {
         organizationId: { type: 'string' },
         fieldId: { type: 'string' },
+        provider: providerProperty,
       },
       required: ['organizationId', 'fieldId'],
     },
@@ -328,14 +382,21 @@ export const toolDefinitions = [
   {
     name: 'list_crop_types',
     description: 'List all available crop types.',
-    inputSchema: { type: 'object', properties: {}, required: [] },
+    inputSchema: {
+      type: 'object',
+      properties: { provider: providerProperty },
+      required: [],
+    },
   },
   {
     name: 'list_users',
     description: 'List all users in an organization.',
     inputSchema: {
       type: 'object',
-      properties: { organizationId: { type: 'string' } },
+      properties: {
+        organizationId: { type: 'string' },
+        provider: providerProperty,
+      },
       required: ['organizationId'],
     },
   },
@@ -344,7 +405,10 @@ export const toolDefinitions = [
     description: 'List all assets for an organization.',
     inputSchema: {
       type: 'object',
-      properties: { organizationId: { type: 'string' } },
+      properties: {
+        organizationId: { type: 'string' },
+        provider: providerProperty,
+      },
       required: ['organizationId'],
     },
   },

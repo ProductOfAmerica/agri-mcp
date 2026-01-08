@@ -13,7 +13,7 @@ export async function mcpCall(
   args: Record<string, unknown>,
   options?: { farmerId?: string; apiKey?: string },
 ): Promise<McpResponse> {
-  const response = await fetch(`${GATEWAY_URL}/v1/john-deere`, {
+  const response = await fetch(`${GATEWAY_URL}/v1/mcp`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -35,7 +35,7 @@ export async function mcpListTools(options?: {
   farmerId?: string;
   apiKey?: string;
 }): Promise<McpResponse> {
-  const response = await fetch(`${GATEWAY_URL}/v1/john-deere`, {
+  const response = await fetch(`${GATEWAY_URL}/v1/mcp`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
