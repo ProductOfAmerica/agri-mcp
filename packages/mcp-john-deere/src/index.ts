@@ -150,7 +150,7 @@ export default {
         { status: 400, headers: { 'Content-Type': 'application/json' } },
       );
     } catch (error) {
-      console.error('John Deere MCP error:', error);
+      console.error('[error] john-deere:', error);
       return new Response(
         JSON.stringify({
           error: {

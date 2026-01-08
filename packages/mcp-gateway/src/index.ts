@@ -50,7 +50,7 @@ export default {
       if (error instanceof ApiError) {
         return withCors(error.toResponse());
       }
-      console.error('Unexpected error:', error);
+      console.error('[error] gateway:', error);
       return withCors(Errors.internal().toResponse());
     }
   },

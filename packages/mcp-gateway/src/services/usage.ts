@@ -40,7 +40,7 @@ export async function logUsage(
     .select('id');
 
   if (error) {
-    console.error('[USAGE] Failed to log:', error);
+    console.error('[usage] failed:', error);
     const stub = env.MONTHLY_COUNTER.get(
       env.MONTHLY_COUNTER.idFromName(params.developerId),
     );
@@ -49,6 +49,6 @@ export async function logUsage(
   }
 
   console.log(
-    `[USAGE] logged: status=${params.statusCode}, id=${data?.[0]?.id?.slice(0, 8) ?? 'none'}`,
+    `[usage] logged: status=${params.statusCode} id=${data?.[0]?.id?.slice(0, 8) ?? 'none'}`,
   );
 }

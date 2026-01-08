@@ -29,12 +29,10 @@ export async function handleMcpRequest(
   const startTime = Date.now();
   const url = new URL(request.url);
 
-  const clientIp =
-    request.headers.get('CF-Connecting-IP') ||
-    request.headers.get('X-Forwarded-For')?.split(',')[0] ||
-    'unknown';
+  const apiKey = extractApiKey(request);
+  const authRateLimitKey = apiKey ? apiKey.slice(0, 14) : 'unknown';
 
-  const authRateLimit = await checkAuthRateLimit(clientIp, env);
+  const authRateLimit = await checkAuthRateLimit(authRateLimitKey, env);
   if (!authRateLimit.allowed) {
     throw new ApiError(
       429,
@@ -43,7 +41,6 @@ export async function handleMcpRequest(
     );
   }
 
-  const apiKey = extractApiKey(request);
   const validation = await validateApiKey(apiKey, env);
 
   if (
@@ -52,7 +49,7 @@ export async function handleMcpRequest(
     !validation.subscription ||
     !validation.keyId
   ) {
-    ctx.waitUntil(recordAuthFailure(clientIp, env));
+    ctx.waitUntil(recordAuthFailure(authRateLimitKey, env));
     throw Errors.unauthorized();
   }
 
@@ -117,7 +114,7 @@ export async function handleMcpRequest(
     response = await routeToProvider(modifiedRequest, provider, env);
     statusCode = response.status;
   } catch (e) {
-    console.error('Provider error:', e);
+    console.error('[error] provider:', e);
     response = Errors.internal().toResponse();
     statusCode = 500;
   }

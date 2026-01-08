@@ -10,7 +10,7 @@ export async function handleCacheInvalidation(
   request: Request,
   env: Env,
 ): Promise<Response> {
-  console.log('[CACHE INVALIDATION] Request received');
+  console.log('[cache] invalidation request');
 
   if (request.method !== 'POST') {
     return jsonResponse({ error: 'Method not allowed' }, 405);
@@ -57,15 +57,11 @@ export async function handleCacheInvalidation(
   );
   deletions.push(env.RATE_LIMITS.delete(`ratelimit:${developerId}:${prevKey}`));
 
-  console.log(
-    `[CACHE INVALIDATION] Deleting keys for developer ${developerId}: ${currentKey}, ${prevKey}`,
-  );
+  console.log(`[cache] clearing: developer=${developerId}`);
 
   await Promise.all(deletions);
 
-  console.log(
-    `[CACHE INVALIDATION] Deleted ${apiKeys?.length ?? 0} API key cache entries and rate limit keys`,
-  );
+  console.log(`[cache] cleared: ${apiKeys?.length ?? 0} api keys`);
 
   return jsonResponse({
     invalidated: apiKeys?.length ?? 0,

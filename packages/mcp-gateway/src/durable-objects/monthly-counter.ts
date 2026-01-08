@@ -51,7 +51,7 @@ export class MonthlyUsageCounter extends DurableObject<Env> {
         .gte('request_timestamp', monthStart.toISOString());
 
       const dbCount = error ? 0 : (count ?? 0);
-      console.log(`[DO MONTHLY] seeded from DB: ${dbCount}`);
+      console.log(`[rate_limit:monthly] seeded: ${dbCount}`);
 
       const fresh: UsageData = {
         month: currentMonth,
@@ -73,14 +73,14 @@ export class MonthlyUsageCounter extends DurableObject<Env> {
       const data = await this.getData(developerId);
 
       if (data.count >= limit) {
-        console.log(`[DO MONTHLY] DENIED: ${data.count}/${limit}`);
+        console.log(`[rate_limit:monthly] denied: ${data.count}/${limit}`);
         return { allowed: false, count: data.count, resetAt: getMonthEnd() };
       }
 
       data.count += 1;
       await this.ctx.storage.put('usage', data);
 
-      console.log(`[DO MONTHLY] ALLOWED: ${data.count}/${limit}`);
+      console.log(`[rate_limit:monthly] allowed: ${data.count}/${limit}`);
       return { allowed: true, count: data.count, resetAt: 0 };
     });
   }
@@ -95,7 +95,7 @@ export class MonthlyUsageCounter extends DurableObject<Env> {
     if (data.count > 0) {
       data.count -= 1;
       await this.ctx.storage.put('usage', data);
-      console.log(`[DO MONTHLY] decremented to ${data.count}`);
+      console.log(`[rate_limit:monthly] decremented: ${data.count}`);
     }
     return data.count;
   }

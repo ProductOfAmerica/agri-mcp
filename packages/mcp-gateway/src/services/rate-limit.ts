@@ -33,9 +33,7 @@ export async function checkAuthRateLimit(
   }
 
   if (cached.count >= MAX_FAILED_ATTEMPTS) {
-    console.log(
-      `[AUTH RATE LIMIT] IP ${ip} blocked: ${cached.count} failed attempts`,
-    );
+    console.log(`[rate_limit:auth] denied: ${ip} (${cached.count} attempts)`);
     return { allowed: false, remaining: 0 };
   }
 
@@ -59,9 +57,7 @@ export async function recordAuthFailure(ip: string, env: Env): Promise<void> {
     expirationTtl: BLOCK_DURATION_SECONDS,
   });
 
-  console.log(
-    `[AUTH FAILURE] IP ${ip} now has ${newData.count} failed attempts`,
-  );
+  console.log(`[rate_limit:auth] failure: ${ip} (${newData.count} attempts)`);
 }
 
 export async function checkRateLimit(
@@ -77,6 +73,9 @@ export async function checkRateLimit(
   const count = current ?? 0;
 
   if (count >= limits.perMinute) {
+    console.log(
+      `[rate_limit:minute] denied: ${count}/${limits.perMinute} (${tier})`,
+    );
     const now = new Date();
     const resetAt = new Date(
       now.getFullYear(),
