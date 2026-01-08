@@ -32,11 +32,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build packages
-        run: pnpm build
+      - name: Build worker
+        run: pnpm --filter "./packages/types" --filter "./${{ inputs.working-directory }}" build
 
       - name: Type check
-        run: pnpm check
+        run: pnpm --filter "./${{ inputs.working-directory }}" check
 
       - name: Deploy
         uses: cloudflare/wrangler-action@v3
