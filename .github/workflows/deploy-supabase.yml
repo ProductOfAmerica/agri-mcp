@@ -13,6 +13,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Deploy Migrations and Functions
+    environment: Production
 
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
