@@ -1,4 +1,4 @@
-import { getSupabaseClient } from './supabase-client.ts';
+import { getSupabaseClient } from '../supabase-client.ts';
 
 export type Provider = 'john_deere' | 'climate' | 'cnhi';
 

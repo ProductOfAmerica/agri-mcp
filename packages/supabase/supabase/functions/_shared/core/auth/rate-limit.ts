@@ -1,4 +1,4 @@
-import { cacheDelete, cacheGet, cacheSet } from './cache.ts';
+import { cacheDelete, cacheGet, cacheSet } from '../routing/cache.ts';
 
 const TIER_LIMITS: Record<string, { perMinute: number; perMonth: number }> = {
   free: { perMinute: 10, perMonth: 1000 },

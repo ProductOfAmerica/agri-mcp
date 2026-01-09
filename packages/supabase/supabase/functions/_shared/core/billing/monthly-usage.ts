@@ -1,4 +1,4 @@
-import { getSupabaseClient } from './supabase-client.ts';
+import { getSupabaseClient } from '../supabase-client.ts';
 
 function getCurrentMonth(): string {
   const now = new Date();

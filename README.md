@@ -6,23 +6,38 @@ MCP infrastructure platform for agricultural APIs. Developers integrate once, ac
 
 - **Unified API Access**: Single integration point for multiple agricultural data providers
 - **OAuth Management**: Automatic token refresh and secure storage
-- **Rate Limiting**: Tier-based limits with Cloudflare KV caching
+- **Rate Limiting**: Tier-based limits with PostgreSQL caching
 - **Developer Dashboard**: Next.js 16 app for API key management and farmer connections
 
 ## Architecture
 
 ```mermaid
-flowchart LR
-    A[Developer App<br/>Claude, etc] --> B[MCP Gateway<br/>Cloudflare]
-    B --> C[John Deere MCP<br/>Cloudflare]
-    B --> D[(Supabase<br/>Auth, DB, Vault)]
-    C --> E[John Deere API]
+flowchart TB
+    subgraph Client
+        A[Developer App<br/>Claude, etc]
+    end
+    
+    subgraph Supabase
+        subgraph Edge Functions
+            B[mcp-gateway]
+            C[mcp-john-deere]
+        end
+        D[(PostgreSQL<br/>Auth, DB, Cache)]
+    end
+    
+    E[John Deere API]
+    
+    A --> B
+    B --> C
+    B --> D
+    C --> D
+    C --> E
 ```
 
 ## Tech Stack
 
-- **Cloudflare Workers**: MCP servers (mcp-gateway, mcp-john-deere)
-- **Supabase**: Auth, PostgreSQL, encrypted token storage
+- **Supabase Edge Functions**: MCP servers (mcp-gateway, mcp-john-deere) - Deno runtime
+- **Supabase PostgreSQL**: Auth, DB, encrypted token storage, cache tables
 - **Vercel**: Next.js 16 dashboard
 - **Turborepo**: Monorepo orchestration
 - **Biome**: Linting and formatting
@@ -59,31 +74,33 @@ pnpm check
 ```
 fieldmcp/
 ├── apps/
-│   └── dashboard/          # Next.js developer dashboard
+│   └── dashboard/                    # Next.js developer dashboard
 ├── packages/
-│   ├── types/              # Shared TypeScript types (@fieldmcp/types)
-│   ├── mcp-gateway/        # API gateway worker - auth, rate limits, routing
-│   ├── mcp-john-deere/     # John Deere MCP server - tools for JD API
-│   └── supabase/           # Migrations and edge functions
+│   ├── types/                        # Shared TypeScript types (@fieldmcp/types)
+│   └── supabase/
+│       └── supabase/
+│           ├── functions/
+│           │   ├── _shared/          # Shared code for Edge Functions
+│           │   ├── mcp-gateway/      # API gateway - auth, rate limits, routing
+│           │   └── mcp-john-deere/   # John Deere MCP server
+│           └── migrations/           # Database migrations
 └── docs/
-    └── plans/              # Execution plans
+    └── plans/                        # Execution plans
 ```
 
 ## Environment Variables
 
-### packages/mcp-gateway
+### Supabase Edge Functions (packages/supabase/.env.local)
 
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_KEY`
-
-### packages/mcp-john-deere
-
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_KEY`
+- `SUPABASE_URL` - Auto-set by Supabase
+- `SUPABASE_SERVICE_ROLE_KEY` - Auto-set by Supabase
 - `JOHN_DEERE_CLIENT_ID`
 - `JOHN_DEERE_CLIENT_SECRET`
+- `JOHN_DEERE_API_BASE`
+- `JOHN_DEERE_FUNCTION_URL`
+- `INTERNAL_SECRET`
 
-### apps/dashboard
+### apps/dashboard (.env.local)
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -93,6 +110,8 @@ fieldmcp/
 - `JOHN_DEERE_REDIRECT_URI`
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
+- `NEXT_PUBLIC_GATEWAY_URL`
+- `GATEWAY_INTERNAL_SECRET`
 
 ## Contributing
 

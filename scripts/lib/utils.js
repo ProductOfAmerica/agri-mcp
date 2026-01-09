@@ -1,5 +1,5 @@
 import { execSync, spawn } from 'node:child_process';
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -7,8 +7,6 @@ export const __dirname = dirname(fileURLToPath(import.meta.url));
 export const ROOT = join(__dirname, '..', '..');
 export const SUPABASE_DIR = join(ROOT, 'packages', 'supabase');
 export const DASHBOARD_DIR = join(ROOT, 'apps', 'dashboard');
-export const GATEWAY_DIR = join(ROOT, 'packages', 'mcp-gateway');
-export const JOHN_DEERE_DIR = join(ROOT, 'packages', 'mcp-john-deere');
 export const ENV_FILE = join(DASHBOARD_DIR, '.env.local');
 
 export const colors = {
@@ -184,6 +182,7 @@ export function updateEnvFile(supabaseCreds, stripeWebhookSecret) {
     NEXT_PUBLIC_SUPABASE_URL: supabaseCreds.apiUrl || 'http://127.0.0.1:54321',
     NEXT_PUBLIC_SUPABASE_ANON_KEY: supabaseCreds.anonKey,
     SUPABASE_SERVICE_KEY: supabaseCreds.serviceRoleKey,
+    NEXT_PUBLIC_GATEWAY_URL: supabaseCreds.apiUrl || 'http://127.0.0.1:54321',
   };
 
   if (stripeWebhookSecret) {
@@ -210,7 +209,7 @@ export function startSupabaseFunctions() {
   log('FUNCTIONS', colors.yellow, 'Starting Supabase Edge Functions...');
   return spawnWithPrefix(
     'supabase',
-    ['functions', 'serve'],
+    ['functions', 'serve', '--env-file', join(SUPABASE_DIR, '.env.local')],
     SUPABASE_DIR,
     'FUNCTIONS',
     colors.yellow,
@@ -250,18 +249,4 @@ export function setupCleanup(processes, stopSupabase = true) {
 
   process.on('SIGINT', cleanup);
   process.on('SIGTERM', cleanup);
-}
-
-export function cleanWranglerCache() {
-  const wranglerDirs = [
-    join(GATEWAY_DIR, '.wrangler'),
-    join(JOHN_DEERE_DIR, '.wrangler'),
-  ];
-
-  for (const dir of wranglerDirs) {
-    if (existsSync(dir)) {
-      rmSync(dir, { recursive: true, force: true });
-      log('CLEANUP', colors.yellow, `Deleted ${dir}`);
-    }
-  }
 }

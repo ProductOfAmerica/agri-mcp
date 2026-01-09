@@ -1,4 +1,4 @@
-import { getSupabaseClient } from './supabase-client.ts';
+import { getSupabaseClient } from '../supabase-client.ts';
 
 export interface CacheOptions {
   expirationTtl?: number;

@@ -1,30 +1,36 @@
-import { CORS_HEADERS } from '../_shared/constants.ts';
-import { ApiError, Errors } from '../_shared/errors.ts';
-import { jsonResponse, withCors } from '../_shared/middleware.ts';
-import {
-  validateContentLength,
-  validateContentType,
-  parseJsonBody,
-  validateJsonDepth,
-  sanitizeObject,
-  validateFarmerId,
-  extractToolName,
-} from '../_shared/validation.ts';
-import { extractApiKey, validateApiKey } from '../_shared/auth.ts';
+import { extractApiKey, validateApiKey } from '../_shared/core/auth/auth.ts';
 import {
   checkAuthRateLimit,
   checkRateLimit,
-  recordAuthFailure,
   getMinuteKey,
-} from '../_shared/rate-limit.ts';
+  recordAuthFailure,
+} from '../_shared/core/auth/rate-limit.ts';
 import {
   checkAndIncrementMonthly,
   decrementMonthly,
-} from '../_shared/monthly-usage.ts';
-import { getFarmerConnections, type Provider } from '../_shared/router.ts';
-import { logUsage } from '../_shared/usage.ts';
-import { cacheDelete, cacheDeletePattern } from '../_shared/cache.ts';
-import { getSupabaseClient } from '../_shared/supabase-client.ts';
+} from '../_shared/core/billing/monthly-usage.ts';
+import { logUsage } from '../_shared/core/billing/usage.ts';
+import { CORS_HEADERS } from '../_shared/core/constants.ts';
+import { ApiError, Errors } from '../_shared/core/errors.ts';
+import { jsonResponse, withCors } from '../_shared/core/middleware.ts';
+import {
+  cacheDelete,
+  cacheDeletePattern,
+} from '../_shared/core/routing/cache.ts';
+import {
+  getFarmerConnections,
+  type Provider,
+} from '../_shared/core/routing/router.ts';
+import { getSupabaseClient } from '../_shared/core/supabase-client.ts';
+import {
+  extractToolName,
+  parseJsonBody,
+  sanitizeObject,
+  validateContentLength,
+  validateContentType,
+  validateFarmerId,
+  validateJsonDepth,
+} from '../_shared/core/validation.ts';
 
 const JOHN_DEERE_FUNCTION_URL = Deno.env.get('JOHN_DEERE_FUNCTION_URL') ?? '';
 
@@ -183,8 +189,8 @@ async function routeToProvider(
       if (!JOHN_DEERE_FUNCTION_URL) {
         throw new Error('JOHN_DEERE_FUNCTION_URL not configured');
       }
-      
-      const response = await fetch(JOHN_DEERE_FUNCTION_URL, {
+
+      return await fetch(JOHN_DEERE_FUNCTION_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -195,7 +201,6 @@ async function routeToProvider(
         },
         body: JSON.stringify(body),
       });
-      return response;
     }
     default:
       return new Response(
@@ -250,6 +255,11 @@ async function handleCacheInvalidation(request: Request): Promise<Response> {
     }
   }
 
+  const tokenDeletedCount = await cacheDeletePattern(
+    'token_cache',
+    `token:${developerId}:%`,
+  );
+
   const now = new Date();
   const prevMinute = new Date(now.getTime() - 60000);
   const currentKey = getMinuteKey(now);
@@ -258,10 +268,13 @@ async function handleCacheInvalidation(request: Request): Promise<Response> {
   await cacheDelete('rate_limits', `ratelimit:${developerId}:${currentKey}`);
   await cacheDelete('rate_limits', `ratelimit:${developerId}:${prevKey}`);
 
-  console.log(`[cache] cleared: ${deletedCount} api keys for developer=${developerId}`);
+  console.log(
+    `[cache] cleared: ${deletedCount} api keys, ${tokenDeletedCount} tokens for developer=${developerId}`,
+  );
 
   return jsonResponse({
     invalidated: deletedCount,
+    tokensInvalidated: tokenDeletedCount,
     rateLimitCleared: true,
   });
 }
@@ -273,7 +286,10 @@ Deno.serve(async (request: Request): Promise<Response> => {
 
   const url = new URL(request.url);
 
-  if (url.pathname === '/mcp-gateway/health' || url.pathname === '/mcp-gateway') {
+  if (
+    url.pathname === '/mcp-gateway/health' ||
+    url.pathname === '/mcp-gateway'
+  ) {
     return jsonResponse({ status: 'ok' }, 200, CORS_HEADERS);
   }
 

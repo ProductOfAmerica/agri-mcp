@@ -1,5 +1,5 @@
+import { getSupabaseClient } from '../supabase-client.ts';
 import { decrementMonthly } from './monthly-usage.ts';
-import { getSupabaseClient } from './supabase-client.ts';
 
 interface UsageParams {
   developerId: string;

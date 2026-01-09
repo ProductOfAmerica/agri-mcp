@@ -1,6 +1,6 @@
-import { cacheGet, cacheSet } from './cache.ts';
-import { API_KEY_CACHE_TTL } from './constants.ts';
-import { getSupabaseClient } from './supabase-client.ts';
+import { API_KEY_CACHE_TTL } from '../constants.ts';
+import { cacheGet, cacheSet } from '../routing/cache.ts';
+import { getSupabaseClient } from '../supabase-client.ts';
 
 export interface ApiKeyValidation {
   valid: boolean;

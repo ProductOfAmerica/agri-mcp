@@ -1,6 +1,6 @@
-import { getToken } from '../_shared/token.ts';
-import { DeereApiClient } from '../_shared/deere-api.ts';
-import * as tools from '../_shared/deere-tools.ts';
+import { getToken } from '../_shared/core/auth/token.ts';
+import { DeereApiClient } from '../_shared/providers/deere/deere-api.ts';
+import * as tools from '../_shared/providers/deere/deere-tools.ts';
 
 interface CallToolResult {
   content: Array<{ type: string; text: string }>;
@@ -43,7 +43,9 @@ Deno.serve(async (request: Request): Promise<Response> => {
 
   try {
     const accessToken = await getToken(developerId, farmerId);
-    const apiBase = Deno.env.get('JOHN_DEERE_API_BASE') ?? 'https://sandboxapi.deere.com/platform';
+    const apiBase =
+      Deno.env.get('JOHN_DEERE_API_BASE') ??
+      'https://sandboxapi.deere.com/platform';
     const client = new DeereApiClient({
       baseUrl: apiBase,
       accessToken,

@@ -2,7 +2,11 @@ import { type CookieOptions, createServerClient } from '@supabase/ssr';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function updateSession(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith('/api/webhooks/')) {
+  const publicPaths = ['/manifest.json', '/robots.txt', '/sitemap.xml'];
+  if (
+    request.nextUrl.pathname.startsWith('/api/webhooks/') ||
+    publicPaths.includes(request.nextUrl.pathname)
+  ) {
     return NextResponse.next({ request });
   }
 
@@ -74,6 +78,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|json)$).*)',
   ],
 };

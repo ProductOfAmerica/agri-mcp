@@ -1,6 +1,6 @@
-import { cacheGet, cacheSet } from './cache.ts';
-import { TOKEN_CACHE_TTL } from './constants.ts';
-import { getSupabaseClient } from './supabase-client.ts';
+import { TOKEN_CACHE_TTL } from '../constants.ts';
+import { cacheGet, cacheSet } from '../routing/cache.ts';
+import { getSupabaseClient } from '../supabase-client.ts';
 
 interface TokenData {
   accessToken: string;
