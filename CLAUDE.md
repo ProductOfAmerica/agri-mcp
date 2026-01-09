@@ -71,6 +71,7 @@ fieldmcp/
 
 ## Standards
 
+- **NEVER use `cd` in Bash commands** - You're already in the working directory. Just run commands directly (e.g., `git status`, not `cd /some/path && git status`)
 - TypeScript everywhere, strict mode
 - Biome for linting/formatting (NOT ESLint/Prettier)
 - pnpm workspaces

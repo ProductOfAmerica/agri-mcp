@@ -11,38 +11,10 @@ import { CheckIcon, SparklesIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { BillingSkeleton } from '@/components/skeletons';
 import { getSubscription, getUsageCount } from '@/lib/data';
+import { PRICING_PLANS } from '@/lib/pricing';
 import { createClient } from '@/lib/supabase/server';
 import { RealtimePlanCard } from './realtime-plan-card';
 import { UpgradeButton } from './upgrade-button';
-
-const plans = [
-  {
-    name: 'Developer',
-    tier: 'developer' as const,
-    price: '$99',
-    description: 'For individual developers and small projects',
-    features: [
-      '50,000 requests/month',
-      '100 requests/minute',
-      'Production API access',
-      'Email support',
-    ],
-    popular: false,
-  },
-  {
-    name: 'Startup',
-    tier: 'startup' as const,
-    price: '$299',
-    description: 'For growing teams and applications',
-    features: [
-      '250,000 requests/month',
-      '500 requests/minute',
-      'Production API access',
-      'Priority support',
-    ],
-    popular: true,
-  },
-];
 
 async function CurrentPlanCard({ userId }: { userId: string }) {
   const [subscription, usageCount] = await Promise.all([
@@ -72,7 +44,7 @@ async function AvailablePlans({ userId }: { userId: string }) {
     <div>
       <h2 className="text-lg font-semibold mb-4">Available Plans</h2>
       <div className="grid gap-6 md:grid-cols-2">
-        {plans.map((plan) => (
+        {PRICING_PLANS.map((plan) => (
           <Card
             key={plan.tier}
             className={plan.popular ? 'border-green-500 border-2' : ''}
@@ -91,7 +63,7 @@ async function AvailablePlans({ userId }: { userId: string }) {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-bold">{plan.price}</span>
+                <span className="text-3xl font-bold">{plan.priceDisplay}</span>
                 <span className="text-muted-foreground">/month</span>
               </div>
               <ul className="space-y-2">
