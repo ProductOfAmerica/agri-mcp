@@ -12,14 +12,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@fieldmcp/ui/components/sidebar';
-import {
-  CreditCardIcon,
-  GaugeIcon,
-  KeyIcon,
-  LinkIcon,
-  TractorIcon,
-} from 'lucide-react';
+import { CreditCardIcon, GaugeIcon, KeyIcon, LinkIcon } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
+import icon from '@/app/icon.svg';
 import { usePathname } from 'next/navigation';
 import { RealtimeSidebarUsage } from './realtime-sidebar-usage';
 
@@ -65,9 +61,7 @@ export function AppSidebar({ usage, plan, userId }: AppSidebarProps) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-green-600 text-white">
-                  <TractorIcon className="size-4" />
-                </div>
+                <Image src={icon} alt="FieldMCP" className="size-8" />
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">FieldMCP</span>
                   <span className="truncate text-xs text-muted-foreground">

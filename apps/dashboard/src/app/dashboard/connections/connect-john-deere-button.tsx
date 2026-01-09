@@ -67,7 +67,9 @@ export function ConnectJohnDeereButton() {
             <div className="grid gap-2">
               <Label htmlFor="farmerId">Farmer ID</Label>
               <Input
+                type="search"
                 id="farmerId"
+                name="farmer_identifier"
                 value={farmerId}
                 onChange={(e) => setFarmerId(e.target.value)}
                 placeholder="e.g., farmer-123, john-smith"
@@ -75,6 +77,7 @@ export function ConnectJohnDeereButton() {
                 data-1p-ignore
                 data-lpignore="true"
                 data-form-type="other"
+                data-bwignore
               />
               <p className="text-xs text-muted-foreground">
                 Your internal identifier for this farmer

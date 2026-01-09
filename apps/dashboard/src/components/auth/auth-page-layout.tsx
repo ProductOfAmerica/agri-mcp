@@ -14,10 +14,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@fieldmcp/ui/components/tooltip';
-import { TractorIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import icon from '@/app/icon.svg';
 import { AuthLines } from '@/components/auth/auth-lines';
 
 interface AuthPageLayoutProps {
@@ -40,11 +40,9 @@ export function AuthPageLayout({
 
         <AuthLines className="pointer-events-none absolute inset-x-0 top-0" />
 
-        <CardHeader className="justify-center gap-6 text-center">
+        <CardHeader className="relative justify-center gap-6 text-center">
           <Link href="/" className="flex items-center justify-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-green-600 text-white">
-              <TractorIcon className="size-5" />
-            </div>
+            <Image src={icon} alt="FieldMCP" className="size-8" />
             <span className="text-xl font-semibold">FieldMCP</span>
           </Link>
 
