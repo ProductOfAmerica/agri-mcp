@@ -27,6 +27,9 @@ pnpm lint             # Run Biome linter (check)
 pnpm lint:fix         # Run Biome linter with auto-fix
 pnpm check            # TypeScript type check (turbo)
 pnpm clean            # Clean build artifacts (turbo)
+pnpm test:e2e         # Run end-to-end tests
+pnpm test:e2e:watch   # Run e2e tests in watch mode
+pnpm copy-types       # Copy shared types to Edge Functions
 pnpm supabase:start   # Start local Supabase
 pnpm supabase:stop    # Stop local Supabase
 pnpm supabase:reset   # Reset Supabase database
@@ -67,20 +70,48 @@ flowchart TB
 ```
 fieldmcp/
 ├── apps/
-│   └── dashboard/                    # Next.js developer dashboard
+│   └── dashboard/                        # Next.js 16 developer dashboard
+│       └── src/
+│           ├── app/
+│           │   ├── (auth)/               # Auth pages (login, signup)
+│           │   ├── actions/              # Server actions
+│           │   ├── api/                  # API routes
+│           │   │   ├── auth/             # Auth endpoints
+│           │   │   ├── billing/          # Stripe checkout/portal
+│           │   │   ├── connections/      # Farmer connection management
+│           │   │   ├── keys/             # API key management
+│           │   │   ├── oauth/john-deere/ # John Deere OAuth flow
+│           │   │   └── webhooks/stripe/  # Stripe webhooks
+│           │   └── dashboard/            # Dashboard pages (billing, connections, keys)
+│           ├── components/               # React components (auth, dashboard, layout, seo, skeletons)
+│           ├── hooks/                    # Custom React hooks
+│           └── lib/                      # Utilities (data fetching, supabase client)
 ├── packages/
-│   ├── types/                        # Shared TypeScript types (@fieldmcp/types)
-│   └── supabase/
+│   ├── types/                            # Shared TypeScript types (@fieldmcp/types)
+│   ├── ui/                               # Shared UI components (@fieldmcp/ui)
+│   │   └── src/
+│   │       ├── components/               # Reusable UI components
+│   │       ├── hooks/                    # Shared hooks
+│   │       ├── lib/                      # UI utilities
+│   │       └── styles/                   # Shared styles
+│   └── supabase/                         # Supabase package (@fieldmcp/supabase)
 │       └── supabase/
 │           ├── functions/
-│           │   ├── _shared/          # Shared code for Edge Functions
-│           │   ├── mcp-gateway/      # API gateway - auth, rate limits, routing
-│           │   ├── mcp-john-deere/   # John Deere MCP server
-│           │   ├── stripe-webhook/   # Stripe webhook handler
-│           │   └── refresh-tokens/   # Token refresh job
-│           └── migrations/           # Database migrations
-└── docs/
-    └── plans/                        # Execution plans for Claude Code
+│           │   ├── _shared/              # Shared Edge Function code
+│           │   │   ├── core/             # Core functionality
+│           │   │   │   ├── auth/         # API key validation
+│           │   │   │   ├── billing/      # Usage limits, tier checks
+│           │   │   │   └── routing/      # Request routing
+│           │   │   ├── providers/deere/  # John Deere API client
+│           │   │   └── types/            # Shared types for Edge Functions
+│           │   ├── mcp-gateway/          # API gateway - auth, rate limits, routing
+│           │   ├── mcp-john-deere/       # John Deere MCP server
+│           │   └── refresh-tokens/       # Token refresh job
+│           └── migrations/               # Database migrations
+├── scripts/                              # Build/dev scripts
+│   └── lib/                              # Script utilities
+└── tests/
+    └── e2e/                              # End-to-end tests
 ```
 
 ## Standards
@@ -123,7 +154,7 @@ export async function toolHandler(input, client) {
 
 - Sliding window per minute using cache.rate_limits table
 - Monthly limits using cache.monthly_usage table with atomic increment
-- Limits by tier: Free=10/min, Developer=100/min, Startup=500/min
+- Limits by tier: Free=60/min, Developer=100/min, Startup=500/min, Enterprise=1000/min
 
 ### Cache Tables (replaces Cloudflare KV)
 
