@@ -1,10 +1,21 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
+import { createPageMetadata, site } from '@/lib/seo';
+
+export const metadata: Metadata = createPageMetadata({
+  title: 'Agricultural API Platform - Connect AI to Farm Data',
+  description: site.description,
+  openGraph: {
+    title: site.title,
+    description: `${site.tagline} Integrate with John Deere and Climate FieldView.`,
+  },
+});
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-green-50 to-white">
       <nav className="flex justify-between items-center p-6 max-w-6xl mx-auto">
-        <div className="text-2xl font-bold text-green-700">FieldMCP</div>
+        <div className="text-2xl font-bold text-green-700">{site.name}</div>
         <div className="space-x-4">
           <Link href="/login" className="text-gray-600 hover:text-gray-900">
             Log in
@@ -25,7 +36,7 @@ export default function Home() {
           <span className="text-green-600">in minutes, not weeks</span>
         </h1>
         <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-          FieldMCP provides MCP servers for agricultural APIs. Integrate with
+          {site.name} provides MCP servers for agricultural APIs. Integrate with
           John Deere, Climate FieldView, and more through a unified, LLM-ready
           interface.
         </p>

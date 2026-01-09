@@ -1,7 +1,8 @@
 import { ImageResponse } from 'next/og';
+import { site } from '@/lib/seo';
 
 export const runtime = 'edge';
-export const alt = 'FieldMCP - Agricultural API Platform';
+export const alt = site.title;
 export const size = { width: 1200, height: 675 };
 export const contentType = 'image/png';
 
@@ -60,7 +61,7 @@ export default function TwitterImage() {
           marginBottom: '16px',
         }}
       >
-        FIELD MCP
+        {site.name.toUpperCase().replace('MCP', ' MCP')}
       </div>
       <div
         style={{
@@ -69,7 +70,7 @@ export default function TwitterImage() {
           opacity: 0.9,
         }}
       >
-        Connect your AI to farm data in minutes
+        {site.taglineShort}
       </div>
     </div>,
     { ...size },

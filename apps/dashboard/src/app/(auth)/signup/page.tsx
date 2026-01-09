@@ -2,12 +2,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { AuthPageLayout } from '@/components/auth/auth-page-layout';
 import { SignupForm } from '@/components/auth/signup-form';
+import { createPageMetadata, site } from '@/lib/seo';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
   title: 'Sign Up',
-  description:
-    'Create a FieldMCP account to start connecting your AI to agricultural data.',
-};
+  description: `Create a ${site.name} account to start connecting your AI to agricultural data.`,
+});
 
 export default function SignupPage() {
   return (

@@ -1,4 +1,5 @@
 import { PRICING_PLANS } from '@/lib/pricing';
+import { site } from '@/lib/seo';
 
 interface JsonLdProps {
   baseUrl: string;
@@ -8,11 +9,10 @@ export function SoftwareApplicationJsonLd({ baseUrl }: JsonLdProps) {
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
-    name: 'FieldMCP',
+    name: site.name,
     applicationCategory: 'DeveloperApplication',
     operatingSystem: 'Web',
-    description:
-      'MCP infrastructure platform for agricultural APIs. Connect your AI to farm data in minutes.',
+    description: site.description,
     url: baseUrl,
     offers: PRICING_PLANS.map((plan) => ({
       '@type': 'Offer',
@@ -26,12 +26,12 @@ export function SoftwareApplicationJsonLd({ baseUrl }: JsonLdProps) {
       availability: 'https://schema.org/InStock',
       seller: {
         '@type': 'Organization',
-        name: 'FieldMCP',
+        name: site.name,
       },
     })),
     provider: {
       '@type': 'Organization',
-      name: 'FieldMCP',
+      name: site.name,
       url: baseUrl,
     },
   };

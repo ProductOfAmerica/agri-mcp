@@ -2,11 +2,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { AuthPageLayout } from '@/components/auth/auth-page-layout';
 import { LoginForm } from '@/components/auth/login-form';
+import { createPageMetadata, site } from '@/lib/seo';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
   title: 'Login',
-  description: 'Sign in to your FieldMCP account to access your dashboard.',
-};
+  description: `Sign in to your ${site.name} account to access your dashboard.`,
+});
 
 export default function LoginPage() {
   return (

@@ -2,11 +2,10 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { SoftwareApplicationJsonLd } from '@/components/seo/json-ld';
 import { ThemeProvider } from '@/components/theme-provider';
+import { createRootMetadata, getBaseUrl } from '@/lib/seo';
 import './globals.css';
 
-const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
-  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-  : 'http://localhost:3000';
+const baseUrl = getBaseUrl();
 
 const geistSans = Geist({
   subsets: ['latin'],
@@ -18,27 +17,7 @@ const geistMono = Geist_Mono({
   variable: '--font-mono',
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(baseUrl),
-  title: {
-    default: 'FieldMCP - Agricultural API Platform',
-    template: '%s | FieldMCP',
-  },
-  description: 'Connect your AI to farm data in minutes, not weeks.',
-  appleWebApp: {
-    title: 'FieldMCP',
-  },
-  openGraph: {
-    title: 'FieldMCP - Agricultural API Platform',
-    description: 'Connect your AI to farm data in minutes, not weeks.',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'FieldMCP - Agricultural API Platform',
-    description: 'Connect your AI to farm data in minutes, not weeks.',
-  },
-};
+export const metadata: Metadata = createRootMetadata(baseUrl);
 
 export default function RootLayout({
   children,
