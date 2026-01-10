@@ -50,6 +50,9 @@ export interface FarmerConnection {
   scopes: string[] | null;
   organizations: Record<string, unknown> | null;
   is_active: boolean;
+  needs_reauth: boolean;
+  last_refresh_error: string | null;
+  last_refresh_at: string | null;
   created_at: string;
   updated_at: string;
 }
