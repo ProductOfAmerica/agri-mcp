@@ -2,10 +2,24 @@ import { type CookieOptions, createServerClient } from '@supabase/ssr';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function updateSession(request: NextRequest) {
-  const publicPaths = ['/manifest.json', '/robots.txt', '/sitemap.xml'];
+  // Public paths that don't require authentication
+  const publicFiles = ['/manifest.json', '/robots.txt', '/sitemap.xml'];
+  const publicPrefixes = [
+    '/api/webhooks/',
+    '/legal/',
+    '/pricing',
+    '/docs',
+    '/changelog',
+    '/security',
+    '/customers',
+    '/about',
+    '/integrations',
+    '/status',
+  ];
+
   if (
-    request.nextUrl.pathname.startsWith('/api/webhooks/') ||
-    publicPaths.includes(request.nextUrl.pathname)
+    publicFiles.includes(request.nextUrl.pathname) ||
+    publicPrefixes.some((prefix) => request.nextUrl.pathname.startsWith(prefix))
   ) {
     return NextResponse.next({ request });
   }
