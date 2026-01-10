@@ -3,7 +3,6 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { config } from '@/lib/config';
-import { createClient } from '@/lib/supabase/server';
 
 const stateDataSchema = z.object({
   developerId: z.string().uuid(),
@@ -129,40 +128,33 @@ export async function GET(request: Request) {
 
   const tokens = (await tokenResponse.json()) as TokenResponse;
 
-  const accessTokenEncrypted = Buffer.from(tokens.access_token).toString(
-    'base64',
-  );
-  const refreshTokenEncrypted = Buffer.from(tokens.refresh_token).toString(
-    'base64',
-  );
-  const tokenExpiresAt = new Date(
-    Date.now() + tokens.expires_in * 1000,
-  ).toISOString();
-  const scopes = tokens.scope.split(' ');
-
-  const supabase = await createClient();
-
-  const { error: dbError } = await supabase.from('farmer_connections').upsert(
+  // Store tokens via Edge Function (handles encryption)
+  const storeResponse = await fetch(
+    `${config.gateway.url}/functions/v1/store-tokens`,
     {
-      developer_id: stateData.developerId,
-      farmer_identifier: stateData.farmerId,
-      provider: 'john_deere',
-      access_token_encrypted: accessTokenEncrypted,
-      refresh_token_encrypted: refreshTokenEncrypted,
-      token_expires_at: tokenExpiresAt,
-      scopes,
-      is_active: true,
-    },
-    {
-      onConflict: 'developer_id,farmer_identifier,provider',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Internal-Secret': config.gateway.internalSecret,
+      },
+      body: JSON.stringify({
+        developerId: stateData.developerId,
+        farmerId: stateData.farmerId,
+        provider: 'john_deere',
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        expiresIn: tokens.expires_in,
+        scopes: tokens.scope.split(' '),
+      }),
     },
   );
 
   cookieStore.delete('oauth_state');
   cookieStore.delete('oauth_state_data');
 
-  if (dbError) {
-    console.error('Failed to store tokens:', dbError);
+  if (!storeResponse.ok) {
+    const errorData = await storeResponse.text();
+    console.error('Failed to store tokens:', errorData);
     return NextResponse.redirect(
       new URL(
         '/dashboard/connections?error=Failed+to+store+connection',
