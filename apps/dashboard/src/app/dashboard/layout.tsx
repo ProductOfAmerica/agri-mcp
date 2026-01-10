@@ -15,7 +15,7 @@ import {
   SidebarProvider,
 } from '@fieldmcp/ui/components/sidebar';
 import { Skeleton } from '@fieldmcp/ui/components/skeleton';
-import { Suspense } from 'react';
+import { type ReactNode, Suspense } from 'react';
 import { AuthenticatedLayout } from '@/components/layout/authenticated-layout';
 
 function LayoutSkeleton() {
@@ -86,11 +86,7 @@ function LayoutSkeleton() {
   );
 }
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <Suspense fallback={<LayoutSkeleton />}>
       <AuthenticatedLayout>{children}</AuthenticatedLayout>

@@ -19,7 +19,7 @@ import {
   Loader2Icon,
   PlusIcon,
 } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useCallback, useState } from 'react';
 import { useAsyncValidation } from '@/hooks/use-async-validation';
 
 interface ConnectJohnDeereButtonProps {
@@ -50,14 +50,14 @@ export function ConnectJohnDeereButton({
     enabled: farmerId.trim().length > 0,
   });
 
-  function handleFarmerIdChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFarmerIdChange(e: ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;
     setFarmerId(value);
     setError(null);
     farmerIdValidation.validate(value);
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
 

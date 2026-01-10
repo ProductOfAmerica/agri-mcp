@@ -1,6 +1,7 @@
 import { SidebarInset, SidebarProvider } from '@fieldmcp/ui/components/sidebar';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
+import type { ReactNode } from 'react';
 import { Header } from '@/components/layout/header';
 import { SidebarWrapper } from '@/components/layout/sidebar-wrapper';
 import { createClient } from '@/lib/supabase/server';
@@ -8,7 +9,7 @@ import { createClient } from '@/lib/supabase/server';
 export async function AuthenticatedLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   await connection();
   const supabase = await createClient();

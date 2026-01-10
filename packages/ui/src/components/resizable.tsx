@@ -1,14 +1,12 @@
-'use client';
-
 import { cn } from '@fieldmcp/ui/lib/utils';
 import { GripVerticalIcon } from 'lucide-react';
-import type * as React from 'react';
+import type { ComponentProps } from 'react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 
 function ResizablePanelGroup({
   className,
   ...props
-}: React.ComponentProps<typeof Group>) {
+}: ComponentProps<typeof Group>) {
   return (
     <Group
       data-slot="resizable-panel-group"
@@ -21,7 +19,7 @@ function ResizablePanelGroup({
   );
 }
 
-function ResizablePanel({ ...props }: React.ComponentProps<typeof Panel>) {
+function ResizablePanel({ ...props }: ComponentProps<typeof Panel>) {
   return <Panel data-slot="resizable-panel" {...props} />;
 }
 
@@ -29,7 +27,7 @@ function ResizableHandle({
   withHandle,
   className,
   ...props
-}: React.ComponentProps<typeof Separator> & {
+}: ComponentProps<typeof Separator> & {
   withHandle?: boolean;
 }) {
   return (

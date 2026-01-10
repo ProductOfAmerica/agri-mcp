@@ -21,7 +21,7 @@ import {
   PlusIcon,
   XCircleIcon,
 } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useCallback, useState } from 'react';
 import { useAsyncValidation } from '@/hooks/use-async-validation';
 
 export function CreateKeyButton() {
@@ -43,14 +43,14 @@ export function CreateKeyButton() {
     enabled: name.length > 0,
   });
 
-  function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleNameChange(e: ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;
     setName(value);
     setServerError(null);
     nameValidation.validate(value);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (nameValidation.isValidating || nameValidation.error) return;
 

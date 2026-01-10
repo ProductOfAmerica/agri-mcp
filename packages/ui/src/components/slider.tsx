@@ -1,8 +1,7 @@
-'use client';
-
 import { cn } from '@fieldmcp/ui/lib/utils';
 import * as SliderPrimitive from '@radix-ui/react-slider';
-import * as React from 'react';
+import type { ComponentProps } from 'react';
+import { useMemo } from 'react';
 
 function Slider({
   className,
@@ -11,8 +10,8 @@ function Slider({
   min = 0,
   max = 100,
   ...props
-}: React.ComponentProps<typeof SliderPrimitive.Root>) {
-  const _values = React.useMemo(
+}: ComponentProps<typeof SliderPrimitive.Root>) {
+  const _values = useMemo(
     () =>
       Array.isArray(value)
         ? value

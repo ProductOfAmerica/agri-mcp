@@ -1,10 +1,7 @@
+import type { ReactNode } from 'react';
 import { MarketingFooter, MarketingNavbar } from '@/components/marketing';
 
-export default function MarketingLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function MarketingLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col">
       <MarketingNavbar />

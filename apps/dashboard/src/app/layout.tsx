@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import type { ReactNode } from 'react';
 import { SoftwareApplicationJsonLd } from '@/components/seo/json-ld';
 import { ThemeProvider } from '@/components/theme-provider';
 import { createRootMetadata, getBaseUrl } from '@/lib/seo';
+
 import './globals.css';
 
 const baseUrl = getBaseUrl();
@@ -19,11 +21,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = createRootMetadata(baseUrl);
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body

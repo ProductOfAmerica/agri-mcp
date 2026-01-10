@@ -1,10 +1,8 @@
-'use client';
-
 import { cn } from '@fieldmcp/ui/lib/utils';
 import { useInView, useMotionValue, useSpring } from 'motion/react';
-import * as React from 'react';
+import { type ComponentPropsWithoutRef, useEffect, useRef } from 'react';
 
-interface NumberTickerProps extends React.ComponentPropsWithoutRef<'span'> {
+interface NumberTickerProps extends ComponentPropsWithoutRef<'span'> {
   value: number;
   startValue?: number;
   direction?: 'up' | 'down';
@@ -25,7 +23,7 @@ function NumberTicker({
   stiffness = 200,
   ...props
 }: NumberTickerProps) {
-  const ref = React.useRef<HTMLSpanElement>(null);
+  const ref = useRef<HTMLSpanElement>(null);
   const motionValue = useMotionValue(direction === 'down' ? value : startValue);
 
   const springValue = useSpring(motionValue, {
@@ -35,7 +33,7 @@ function NumberTicker({
 
   const isInView = useInView(ref, { once: true, margin: '0px' });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isInView) {
       const timer = setTimeout(() => {
         motionValue.set(direction === 'down' ? startValue : value);
@@ -45,7 +43,7 @@ function NumberTicker({
     }
   }, [motionValue, isInView, delay, value, direction, startValue]);
 
-  React.useEffect(
+  useEffect(
     () =>
       springValue.on('change', (latest) => {
         if (ref.current) {
