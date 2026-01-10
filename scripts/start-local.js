@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 
-import { spawn } from 'node:child_process';
 import {
-  attachPrefixedOutputHandlers,
+  attachFilteredOutputHandlers,
   colors,
   DASHBOARD_DIR,
   initializeEnvironment,
   log,
-  logInfo,
   setupCleanup,
+  shellSpawn,
   spawnWithPrefix,
   startSupabase,
   startSupabaseFunctions,
@@ -22,13 +21,12 @@ function buildNext() {
   log('NEXT', colors.blue, 'Building Next.js for production...');
 
   return new Promise((resolve, reject) => {
-    const proc = spawn('pnpm', ['build'], {
+    const proc = shellSpawn('pnpm', ['build'], {
       cwd: DASHBOARD_DIR,
-      shell: true,
       stdio: 'pipe',
     });
 
-    attachPrefixedOutputHandlers(proc, 'NEXT', colors.blue);
+    attachFilteredOutputHandlers(proc, 'NEXT', colors.blue);
 
     proc.on('error', (err) => {
       reject(new Error(`Failed to spawn Next.js build: ${err.message}`));
@@ -56,29 +54,27 @@ async function main() {
   const { stripeProc } = await initializeEnvironment();
 
   // Run Supabase start and Next.js build in PARALLEL
-  // This is the main optimization - these two can run concurrently
-  logInfo('Starting Supabase and Next.js build in parallel...');
-
   const [supabaseCreds] = await Promise.all([startSupabase(), buildNext()]);
-
-  log('SUPABASE', colors.green, 'Started successfully!');
-  if (supabaseCreds.studioUrl) {
-    log('SUPABASE', colors.green, `Studio: ${supabaseCreds.studioUrl}`);
-  }
 
   // Start the services now that both Supabase and build are ready
   const functionsProc = startSupabaseFunctions();
   const nextProc = startNextProd();
 
-  console.log(`\n${'─'.repeat(50)}`);
-  logInfo('All services started in PRODUCTION mode!');
-  logInfo('Dashboard: http://localhost:3000');
-  logInfo('MCP Gateway: http://127.0.0.1:54321/functions/v1/mcp-gateway');
-  logInfo('John Deere MCP: http://127.0.0.1:54321/functions/v1/mcp-john-deere');
-  logInfo(
-    `Supabase Studio: ${supabaseCreds.studioUrl || 'http://127.0.0.1:54323'}`,
+  // Clean summary
+  console.log('');
+  console.log(
+    `${colors.green}✓${colors.reset} All services ready (production mode)`,
   );
-  console.log(`${'─'.repeat(50)}\n`);
+  console.log(
+    `  Dashboard:  ${colors.cyan}http://localhost:3000${colors.reset}`,
+  );
+  console.log(
+    `  Gateway:    ${colors.cyan}http://127.0.0.1:54321/functions/v1/mcp-gateway${colors.reset}`,
+  );
+  console.log(
+    `  Studio:     ${colors.cyan}${supabaseCreds.studioUrl}${colors.reset}`,
+  );
+  console.log('');
 
   setupCleanup([nextProc, functionsProc, stripeProc]);
 }

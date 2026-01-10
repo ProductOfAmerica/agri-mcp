@@ -3,6 +3,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+export const VERBOSE = process.argv.includes('--verbose');
 export const __dirname = dirname(fileURLToPath(import.meta.url));
 export const ROOT = join(__dirname, '..', '..');
 export const SUPABASE_DIR = join(ROOT, 'packages', 'supabase');
@@ -30,6 +31,15 @@ export const colors = {
 const STRIPE_WEBHOOK_TIMEOUT_MS = 10000;
 
 /**
+ * Spawns a process with shell: true using a single command string.
+ * This avoids the Node.js DEP0190 deprecation warning about passing args with shell: true.
+ */
+export function shellSpawn(command, args, options) {
+  const fullCommand = [command, ...args].join(' ');
+  return spawn(fullCommand, [], { ...options, shell: true });
+}
+
+/**
  * Attaches prefixed output handlers to a spawned process's stdout/stderr streams.
  * @param {import('node:child_process').ChildProcess} proc - The spawned process
  * @param {string} prefix - The prefix label (e.g., 'NEXT', 'SUPABASE')
@@ -43,6 +53,94 @@ export function attachPrefixedOutputHandlers(proc, prefix, color) {
   proc.stderr.on('data', (data) => {
     process.stderr.write(`${color}[${prefix}]${colors.reset} ${data}`);
   });
+}
+
+/**
+ * Determines if a line of output is important enough to show in non-verbose mode.
+ * Filters out noisy output like Docker image status, migration details, ASCII boxes.
+ */
+function isImportantLine(line) {
+  const noise = [
+    'Skipped - Image',
+    'already present',
+    'Applying migration',
+    'Seeding data',
+    'Seeding globals',
+    'Initialising schema',
+    'Waiting for health',
+    'Starting database',
+    'Starting containers',
+    'Setting up Edge Functions',
+    'Checking for new versions',
+    'Getting ready',
+    'Compiling',
+    '○ Compiling',
+    '✓ Compiled',
+    'Environments:',
+    // ASCII box characters
+    '╭',
+    '╰',
+    '├',
+    '┌',
+    '└',
+    '┐',
+    '┘',
+    '│',
+    '─',
+    // Next.js noise
+    '▲ Next.js',
+    '- Local:',
+    '- Network:',
+    // Edge Functions noise
+    'Serving functions on',
+  ];
+
+  const important = [
+    'error',
+    'Error',
+    'ERROR',
+    'warning',
+    'Warning',
+    'WARNING',
+    'Started',
+    'Ready in',
+    'failed',
+    'Failed',
+    'NOTICE',
+  ];
+
+  // Empty or whitespace-only lines are noise
+  if (!line.trim()) return false;
+
+  // Check for noise patterns first (exclude these)
+  if (noise.some((n) => line.includes(n))) return false;
+
+  // Check for important patterns (include these)
+  if (important.some((i) => line.includes(i))) return true;
+
+  // Default: don't show
+  return false;
+}
+
+/**
+ * Attaches filtered output handlers that only show important lines unless VERBOSE is set.
+ */
+export function attachFilteredOutputHandlers(proc, prefix, color) {
+  const writeFiltered = (data, stream) => {
+    if (VERBOSE) {
+      stream.write(`${color}[${prefix}]${colors.reset} ${data}`);
+      return;
+    }
+
+    for (const line of data.toString().split('\n')) {
+      if (isImportantLine(line)) {
+        stream.write(`${color}[${prefix}]${colors.reset} ${line}\n`);
+      }
+    }
+  };
+
+  proc.stdout.on('data', (data) => writeFiltered(data, process.stdout));
+  proc.stderr.on('data', (data) => writeFiltered(data, process.stderr));
 }
 
 export function log(prefix, color, message) {
@@ -124,23 +222,36 @@ export async function startSupabase() {
   }
 
   return new Promise((resolve, reject) => {
-    const proc = spawn('supabase', ['start'], {
+    const proc = shellSpawn('supabase', ['start'], {
       cwd: SUPABASE_DIR,
-      shell: true,
       stdio: 'pipe',
     });
 
     let output = '';
 
-    // Capture output for parsing while also displaying with prefix
+    // Helper to write filtered output
+    const writeFiltered = (data, stream) => {
+      if (VERBOSE) {
+        stream.write(`${colors.green}[SUPABASE]${colors.reset} ${data}`);
+        return;
+      }
+
+      for (const line of data.toString().split('\n')) {
+        if (isImportantLine(line)) {
+          stream.write(`${colors.green}[SUPABASE]${colors.reset} ${line}\n`);
+        }
+      }
+    };
+
+    // Capture output for parsing while also displaying filtered output
     proc.stdout.on('data', (data) => {
       output += data.toString();
-      process.stdout.write(`${colors.green}[SUPABASE]${colors.reset} ${data}`);
+      writeFiltered(data, process.stdout);
     });
 
     proc.stderr.on('data', (data) => {
       output += data.toString();
-      process.stderr.write(`${colors.green}[SUPABASE]${colors.reset} ${data}`);
+      writeFiltered(data, process.stderr);
     });
 
     proc.on('error', (err) => {
@@ -158,10 +269,15 @@ export async function startSupabase() {
 }
 
 function parseSupabaseOutput(output) {
+  // Default to known local ports (Supabase CLI uses deterministic ports)
+  const creds = {
+    studioUrl: 'http://127.0.0.1:54323',
+  };
+
   const lines = output.split('\n');
-  const creds = {};
 
   for (const line of lines) {
+    // Old format: "API URL: http://..."
     if (line.includes('API URL:')) {
       creds.apiUrl = line.split('API URL:')[1].trim();
     } else if (line.includes('anon key:')) {
@@ -170,6 +286,12 @@ function parseSupabaseOutput(output) {
       creds.serviceRoleKey = line.split('service_role key:')[1].trim();
     } else if (line.includes('Studio URL:')) {
       creds.studioUrl = line.split('Studio URL:')[1].trim();
+    }
+
+    // New format (ASCII boxes): "│ Studio  │ http://127.0.0.1:54323 │"
+    const studioMatch = line.match(/│\s*Studio\s*│\s*(http[^\s│]+)/);
+    if (studioMatch) {
+      creds.studioUrl = studioMatch[1];
     }
   }
 
@@ -184,23 +306,27 @@ export async function startStripeWebhook() {
   log('STRIPE', colors.magenta, 'Starting Stripe webhook listener...');
 
   return new Promise((resolve) => {
-    const proc = spawn(
+    const proc = shellSpawn(
       'stripe',
       ['listen', '--forward-to', 'localhost:3000/api/webhooks/stripe'],
-      { shell: true, stdio: 'pipe' },
+      { stdio: 'pipe' },
     );
 
     let resolved = false;
+    let timeoutId;
 
     const resolveOnce = (result) => {
       if (resolved) return;
       resolved = true;
+      clearTimeout(timeoutId);
       resolve(result);
     };
 
     const handleOutput = (data, stream) => {
       const output = data.toString();
-      stream.write(`${colors.magenta}[STRIPE]${colors.reset} ${output}`);
+      if (VERBOSE) {
+        stream.write(`${colors.magenta}[STRIPE]${colors.reset} ${output}`);
+      }
 
       // Extract webhook secret from Stripe CLI output
       const match = output.match(/whsec_[a-zA-Z0-9]+/);
@@ -218,8 +344,10 @@ export async function startStripeWebhook() {
       resolveOnce({ proc: null, webhookSecret: null });
     });
 
-    setTimeout(() => {
-      log('STRIPE', colors.yellow, 'Timeout waiting for webhook secret');
+    timeoutId = setTimeout(() => {
+      if (!resolved) {
+        log('STRIPE', colors.yellow, 'Timeout waiting for webhook secret');
+      }
       resolveOnce({ proc, webhookSecret: null });
     }, STRIPE_WEBHOOK_TIMEOUT_MS);
   });
@@ -276,9 +404,10 @@ export function startSupabaseFunctions() {
 }
 
 export function spawnWithPrefix(command, args, cwd, prefix, color) {
-  const proc = spawn(command, args, { cwd, shell: true, stdio: 'pipe' });
+  const proc = shellSpawn(command, args, { cwd, stdio: 'pipe' });
 
-  attachPrefixedOutputHandlers(proc, prefix, color);
+  // Use filtered output unless in verbose mode
+  attachFilteredOutputHandlers(proc, prefix, color);
 
   proc.on('error', (err) => {
     log(prefix, colors.red, `Failed to spawn process: ${err.message}`);
@@ -312,7 +441,15 @@ export function setupCleanup(processes, stopSupabase = true) {
 
 export function copyTypes() {
   log('TYPES', colors.yellow, 'Copying shared types to Edge Functions...');
-  execSync('turbo run //#copy-types', { stdio: 'inherit' });
+  try {
+    execSync('turbo run //#copy-types', { stdio: 'pipe' });
+    log('TYPES', colors.yellow, 'Done');
+  } catch (err) {
+    // Show error output if it fails
+    if (err.stdout) process.stdout.write(err.stdout);
+    if (err.stderr) process.stderr.write(err.stderr);
+    throw err;
+  }
 }
 
 /**
