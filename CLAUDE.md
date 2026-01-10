@@ -14,6 +14,16 @@
 >
 > This is a pnpm monorepo. Use `--filter <package-name>` to target workspaces.
 
+> **⛔ CRITICAL: NEVER REDIRECT OUTPUT TO NULL IN BASH ⛔**
+>
+> This is Windows. Redirecting to `/dev/null` or `nul` creates a file called `nul`.
+>
+> ❌ WRONG: `command > /dev/null 2>&1`
+>
+> ❌ WRONG: `command 2>/dev/null`
+>
+> ✅ RIGHT: Just let the output appear, or don't use redirections.
+
 MCP infrastructure platform for agricultural APIs. Developers integrate once, access John Deere (and later Climate
 FieldView, CNHi) through unified MCP servers.
 
