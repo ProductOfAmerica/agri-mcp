@@ -1,0 +1,121 @@
+-- Seed test user for local development
+-- Email: ${TEST_USER_EMAIL}
+-- Password: ${TEST_USER_PASSWORD}
+
+INSERT INTO auth.users (id,
+                        instance_id,
+                        email,
+                        encrypted_password,
+                        email_confirmed_at,
+                        created_at,
+                        updated_at,
+                        raw_app_meta_data,
+                        raw_user_meta_data,
+                        aud,
+                        role,
+                        confirmation_token,
+                        recovery_token,
+                        email_change_token_new,
+                        email_change,
+                        phone,
+                        phone_change,
+                        phone_change_token,
+                        email_change_token_current,
+                        email_change_confirm_status,
+                        reauthentication_token,
+                        is_sso_user,
+                        is_anonymous)
+VALUES ('00000000-0000-0000-0000-000000000001',
+        '00000000-0000-0000-0000-000000000000',
+        '${TEST_USER_EMAIL}',
+        crypt('${TEST_USER_PASSWORD}', gen_salt('bf')),
+        now(),
+        now(),
+        now(),
+        '{"provider": "email", "providers": ["email"]}',
+        '{}',
+        'authenticated',
+        'authenticated',
+        '',
+        '',
+        '',
+        '',
+        NULL,
+        '',
+        '',
+        '',
+        0,
+        '',
+        false,
+        false)
+ON CONFLICT (id) DO NOTHING;
+
+-- Explicitly create developer and subscription in case trigger doesn't fire
+INSERT INTO public.developers (id, email)
+VALUES ('00000000-0000-0000-0000-000000000001',
+        '${TEST_USER_EMAIL}')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.subscriptions (developer_id, tier, status, monthly_request_limit)
+SELECT '00000000-0000-0000-0000-000000000001',
+       'free',
+       'active',
+       1000
+WHERE NOT EXISTS (SELECT 1 FROM public.subscriptions WHERE developer_id = '00000000-0000-0000-0000-000000000001');
+
+-- API Key for E2E testing
+-- Plaintext key: field_live_e2etestkey1234567890abcdef
+-- Set TEST_API_KEY=field_live_e2etestkey1234567890abcdef in your env
+INSERT INTO public.api_keys (id, developer_id, key_hash, key_prefix, name, is_active)
+VALUES ('00000000-0000-0000-0000-000000000002',
+        '00000000-0000-0000-0000-000000000001',
+        '${TEST_API_KEY_HASH}',
+        'field_live_e2e',
+        'E2E Test Key',
+        true)
+ON CONFLICT (id) DO NOTHING;
+
+-- John Deere OAuth connection for E2E testing
+-- Uses farmer_identifier 'test-id' - set TEST_FARMER_ID=test-id in your env
+-- Note: Refresh token will auto-refresh access token when expired
+INSERT INTO public.farmer_connections (id,
+                                       developer_id,
+                                       farmer_identifier,
+                                       provider,
+                                       access_token_encrypted,
+                                       refresh_token_encrypted,
+                                       token_expires_at,
+                                       scopes,
+                                       is_active)
+VALUES ('c16d8a9c-19d5-48d8-bbb4-fff7174efac1',
+        '00000000-0000-0000-0000-000000000001',
+        'test-id',
+        'john_deere',
+        '${TEST_ACCESS_TOKEN_ENCRYPTED}',
+        '${TEST_REFRESH_TOKEN_ENCRYPTED}',
+        '${TEST_TOKEN_EXPIRES_AT}',
+        ARRAY ['ag2', 'ag1', 'offline_access', 'ag3'],
+        true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Token encryption key for local development
+-- This is a test key - DO NOT use in production!
+-- Production key should be generated with: openssl rand -hex 32
+SELECT vault.create_secret(
+  '${TOKEN_ENCRYPTION_KEY}',
+  'token_encryption_key_v1'
+);
+
+-- App settings for pg_net to call Edge Functions
+ALTER DATABASE postgres SET app.settings.supabase_url = '${SUPABASE_URL}';
+ALTER DATABASE postgres SET app.settings.service_role_key = '${SUPABASE_SERVICE_ROLE_KEY}';
+
+-- John Deere OAuth credentials for token refresh
+SELECT vault.create_secret(
+  '${JOHN_DEERE_CLIENT_ID}',
+  'john_deere_client_id'
+);
+SELECT vault.create_secret(
+  '${JOHN_DEERE_CLIENT_SECRET}',
+  'john_deere_client_secret'
+);

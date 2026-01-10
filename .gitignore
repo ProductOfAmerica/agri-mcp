@@ -155,3 +155,6 @@ vite.config.ts.timestamp-*
 
 # Generated types for Edge Functions
 packages/supabase/supabase/functions/_shared/types/
+
+# Generated seed file (contains secrets from template)
+packages/supabase/supabase/seed.sql
