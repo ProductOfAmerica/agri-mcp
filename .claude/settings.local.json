@@ -8,7 +8,8 @@
       "mcp__next-devtools-mcp__nextjs_call",
       "mcp__supabase__search_docs",
       "mcp__next-devtools-mcp__nextjs_docs",
-      "Bash(pnpm lint:*)"
+      "Bash(pnpm lint:*)",
+      "WebFetch(domain:supabase.com)"
     ],
     "deny": [],
     "ask": []
