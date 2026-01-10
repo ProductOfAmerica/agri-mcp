@@ -3,6 +3,19 @@ UPDATE api_keys
 SET name = 'Key ' || SUBSTRING(key_prefix FROM 12 FOR 3)
 WHERE name IS NULL OR name = '';
 
+-- Rename duplicate active keys by appending a suffix
+-- Keeps the oldest key's name, appends " (2)", " (3)", etc. to duplicates
+WITH duplicates AS (
+  SELECT id, name, developer_id,
+         ROW_NUMBER() OVER (PARTITION BY developer_id, LOWER(name) ORDER BY created_at) as rn
+  FROM api_keys
+  WHERE is_active = true
+)
+UPDATE api_keys
+SET name = api_keys.name || ' (' || d.rn || ')'
+FROM duplicates d
+WHERE api_keys.id = d.id AND d.rn > 1;
+
 -- Add NOT NULL constraint to name column
 ALTER TABLE api_keys ALTER COLUMN name SET NOT NULL;
 
