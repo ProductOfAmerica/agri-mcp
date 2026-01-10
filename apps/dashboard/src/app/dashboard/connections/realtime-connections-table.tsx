@@ -33,6 +33,7 @@ interface Connection {
   provider: string;
   is_active: boolean;
   token_expires_at: string | null;
+  needs_reauth: boolean;
   created_at: string;
 }
 
@@ -171,9 +172,6 @@ export function RealtimeConnectionsTable({
       </TableHeader>
       <TableBody>
         {connections.map((conn) => {
-          const isExpired =
-            conn.token_expires_at &&
-            new Date(conn.token_expires_at) < new Date();
           return (
             <TableRow key={conn.id}>
               <TableCell className="font-mono">
@@ -193,12 +191,12 @@ export function RealtimeConnectionsTable({
                 {new Date(conn.created_at).toLocaleDateString()}
               </TableCell>
               <TableCell>
-                {isExpired ? (
+                {conn.needs_reauth ? (
                   <Badge
                     variant="outline"
-                    className="text-amber-600 border-amber-300"
+                    className="text-red-600 border-red-300"
                   >
-                    Token expired
+                    Needs Re-authentication
                   </Badge>
                 ) : (
                   <Badge
@@ -209,7 +207,15 @@ export function RealtimeConnectionsTable({
                   </Badge>
                 )}
               </TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-right flex items-center justify-end gap-2">
+                {conn.needs_reauth && (
+                  <ConnectJohnDeereButton
+                    variant="outline"
+                    size="sm"
+                    label="Reconnect"
+                    defaultFarmerId={conn.farmer_identifier}
+                  />
+                )}
                 <DisconnectButton
                   connectionId={conn.id}
                   farmerId={conn.farmer_identifier}

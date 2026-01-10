@@ -22,9 +22,21 @@ import {
 import { useCallback, useState } from 'react';
 import { useAsyncValidation } from '@/hooks/use-async-validation';
 
-export function ConnectJohnDeereButton() {
+interface ConnectJohnDeereButtonProps {
+  variant?: 'default' | 'outline' | 'secondary' | 'ghost' | 'link';
+  size?: 'default' | 'sm' | 'lg' | 'icon';
+  label?: string;
+  defaultFarmerId?: string;
+}
+
+export function ConnectJohnDeereButton({
+  variant = 'default',
+  size = 'default',
+  label,
+  defaultFarmerId = '',
+}: ConnectJohnDeereButtonProps = {}) {
   const [open, setOpen] = useState(false);
-  const [farmerId, setFarmerId] = useState('');
+  const [farmerId, setFarmerId] = useState(defaultFarmerId);
   const [error, setError] = useState<string | null>(null);
 
   const checkFarmerIdAvailability = useCallback(async (value: string) => {
@@ -62,7 +74,7 @@ export function ConnectJohnDeereButton() {
 
   function handleClose() {
     setOpen(false);
-    setFarmerId('');
+    setFarmerId(defaultFarmerId);
     setError(null);
     farmerIdValidation.reset();
   }
@@ -75,9 +87,9 @@ export function ConnectJohnDeereButton() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <PlusIcon className="mr-2 size-4" />
-          Connect John Deere
+        <Button variant={variant} size={size}>
+          {!label && <PlusIcon className="mr-2 size-4" />}
+          {label ?? 'Connect John Deere'}
         </Button>
       </DialogTrigger>
       <DialogContent>
