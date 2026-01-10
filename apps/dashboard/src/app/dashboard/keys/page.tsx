@@ -13,7 +13,7 @@ import {
 import { KeyIcon } from 'lucide-react';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
-import { TableSkeleton } from '@/components/skeletons';
+import { KeysTableSkeleton } from '@/components/skeletons';
 import { getApiKeys } from '@/lib/data';
 import { createClient } from '@/lib/supabase/server';
 import { CreateKeyButton } from './create-key-button';
@@ -53,7 +53,7 @@ export default async function KeysPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Suspense fallback={<TableSkeleton columns={5} />}>
+          <Suspense fallback={<KeysTableSkeleton />}>
             <KeysTableWrapper userId={user!.id} />
           </Suspense>
         </CardContent>

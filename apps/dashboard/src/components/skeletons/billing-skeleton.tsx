@@ -21,6 +21,8 @@ export function BillingSkeleton() {
               <Skeleton className="mt-1 h-4 w-32" />
             </CardDescription>
           </div>
+          {/* Placeholder for ManageButton */}
+          <Skeleton className="h-9 w-40" />
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

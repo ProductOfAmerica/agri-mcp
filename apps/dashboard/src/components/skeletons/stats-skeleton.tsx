@@ -8,7 +8,7 @@ export function StatsSkeleton() {
         <Card key={i} className="py-4">
           <CardContent className="flex items-center gap-4">
             <Skeleton className="size-12 rounded-lg" />
-            <div className="flex-1 space-y-2">
+            <div className="flex-1 space-y-1">
               <Skeleton className="h-4 w-24" />
               <Skeleton className="h-7 w-32" />
               <Skeleton className="h-3 w-28" />

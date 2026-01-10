@@ -15,8 +15,8 @@ import {
 import { CreditCardIcon, GaugeIcon, KeyIcon, LinkIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import icon from '@/app/icon.svg';
 import { usePathname } from 'next/navigation';
+import icon from '@/app/icon.svg';
 import { RealtimeSidebarUsage } from './realtime-sidebar-usage';
 
 const navItems = [

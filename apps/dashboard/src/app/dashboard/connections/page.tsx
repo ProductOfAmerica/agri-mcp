@@ -12,7 +12,7 @@ import {
 } from '@fieldmcp/ui/components/card';
 import { LinkIcon } from 'lucide-react';
 import { Suspense } from 'react';
-import { TableSkeleton } from '@/components/skeletons';
+import { ConnectionsTableSkeleton } from '@/components/skeletons';
 import { getConnections } from '@/lib/data';
 import { createClient } from '@/lib/supabase/server';
 import { ConnectJohnDeereButton } from './connect-john-deere-button';
@@ -54,7 +54,7 @@ export default async function ConnectionsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Suspense fallback={<TableSkeleton columns={5} />}>
+          <Suspense fallback={<ConnectionsTableSkeleton />}>
             <ConnectionsTable userId={user!.id} />
           </Suspense>
         </CardContent>
